@@ -13,7 +13,7 @@ import PrintReportView from './components/PrintReportView';
 import InstallPromptBanner from './components/InstallPromptBanner';
 import PinEntryModal from './components/PinEntryModal';
 import ShareSummaryModal from './components/ShareSummaryModal';
-import { getInitialTransactions } from './data/initialData';
+import OnboardingTutorialModal from './components/OnboardingTutorialModal';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/defaultCategories';
 import { DEFAULT_REMINDERS } from './data/defaultReminders';
 import { DEFAULT_BOOKS, DEFAULT_ADMIN_PIN } from './data/defaultBooks';
@@ -21,16 +21,32 @@ import { getTodayString } from './utils/thaiDate';
 import { Phone } from 'lucide-react';
 
 export default function App() {
-  // 1. Persistent State
+  // 1. Persistent State (Free of mock data)
   const [transactions, setTransactions] = useState(() => {
     try {
       const saved = localStorage.getItem('banchee_transactions');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Filter out any mock up data from earlier builds
+          return parsed.filter(t => !String(t.id).startsWith('init-'));
+        }
+      }
     } catch (e) {
       console.error('Failed to parse transactions', e);
     }
-    return getInitialTransactions();
+    return [];
   });
+
+  // Onboarding Tutorial State (shows on first entry)
+  const [showTutorial, setShowTutorial] = useState(() => {
+    return !localStorage.getItem('banchee_tutorial_seen');
+  });
+
+  const handleCloseTutorial = () => {
+    localStorage.setItem('banchee_tutorial_seen', 'true');
+    setShowTutorial(false);
+  };
 
   const [fontSize, setFontSize] = useState(() => {
     return localStorage.getItem('banchee_font_size') || 'normal';
@@ -324,6 +340,12 @@ export default function App() {
             setPinModalBook(null);
           }}
         />
+
+        {/* Step-by-Step Onboarding Tutorial for First-Time Users */}
+        <OnboardingTutorialModal
+          isOpen={showTutorial}
+          onClose={handleCloseTutorial}
+        />
       </div>
     );
   }
@@ -463,6 +485,7 @@ export default function App() {
         onRestoreTransactions={handleRestoreTransactions}
         onResetData={handleResetData}
         onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
+        onOpenTutorial={() => setShowTutorial(true)}
         onSwitchBook={() => setActiveBookId(null)}
       />
 
@@ -489,6 +512,12 @@ export default function App() {
         isOpen={!!shareModalData}
         onClose={() => setShareModalData(null)}
         shareData={shareModalData}
+      />
+
+      {/* Step-by-Step Onboarding Tutorial */}
+      <OnboardingTutorialModal
+        isOpen={showTutorial}
+        onClose={handleCloseTutorial}
       />
 
       {/* A4 Printable Report View (Visible only during window.print()) */}

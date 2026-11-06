@@ -133,10 +133,11 @@ export default function TransactionList({
 
       {/* Items Grouped by Date */}
       {sortedDates.length === 0 ? (
-        <div className="bg-white rounded-2xl p-6 text-center border border-stone-200 shadow-xs my-3">
-          <p className="text-sm font-semibold text-stone-700">ยังไม่มีรายการในกระเป๋านี้</p>
-          <p className="text-xs text-stone-500 mt-1">
-            กดปุ่ม "จดรายจ่าย" หรือ "จดรายรับ" ด้านบนเพื่อเริ่มบันทึกได้เลยครับ
+        <div className="bg-white rounded-2xl p-6 sm:p-8 text-center border border-stone-200 shadow-xs my-3 space-y-2">
+          <div className="text-3xl">📒✨</div>
+          <p className="text-sm sm:text-base font-bold text-stone-800">ยังไม่มีรายการในสมุดนี้</p>
+          <p className="text-xs text-stone-500 max-w-xs mx-auto">
+            แตะปุ่มสีแดงเพื่อ <span className="text-[#BA3C2A] font-bold">จดรายจ่าย</span> หรือปุ่มสีเขียวเพื่อ <span className="text-[#2D6A4F] font-bold">จดรายรับ</span> ด้านบนเพื่อเริ่มบันทึกได้เลยครับ
           </p>
         </div>
       ) : (

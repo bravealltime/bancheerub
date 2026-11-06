@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Type, Volume2, Download, Upload, Phone, Settings2, Users, KeyRound, Shield } from 'lucide-react';
+import { X, Check, Type, Volume2, Download, Upload, Phone, Settings2, Users, KeyRound, Shield, BookOpen } from 'lucide-react';
 import { playTapSound, playDeleteSound, speakThai } from '../utils/audio';
 
 export default function SettingsModal({
@@ -21,6 +21,7 @@ export default function SettingsModal({
   onRestoreTransactions,
   onResetData,
   onOpenCategoryManager,
+  onOpenTutorial,
   onSwitchBook
 }) {
   const [nameInput, setNameInput] = useState(userName || 'คุณตา');
@@ -169,6 +170,32 @@ export default function SettingsModal({
               สลับสมุด
             </button>
           </div>
+
+          {/* Tutorial Guide Revisit Button */}
+          {onOpenTutorial && (
+            <div className="bg-[#FAF9F5] p-3 rounded-2xl border border-stone-200 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 font-bold text-stone-900 text-xs sm:text-sm truncate">
+                  <BookOpen className="w-4 h-4 text-stone-600 flex-shrink-0" />
+                  <span className="truncate">คู่มือแนะนำวิธีใช้งาน</span>
+                </div>
+                <p className="text-[11px] sm:text-xs text-stone-500 mt-0.5 truncate">
+                  ดูขั้นตอนการใช้งานอย่างละเอียดอีกครั้ง
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  playTapSound();
+                  onClose();
+                  onOpenTutorial();
+                }}
+                className="btn-tactile px-3 py-1.5 rounded-xl bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 font-semibold text-xs cursor-pointer flex-shrink-0"
+              >
+                เปิดคู่มือ
+              </button>
+            </div>
+          )}
 
           {/* PIN Security Settings */}
           <div className="bg-[#FAF9F5] p-3 rounded-2xl border border-stone-200 space-y-2">
