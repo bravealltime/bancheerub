@@ -367,64 +367,74 @@ export default function App() {
         pendingRemindersCount={pendingRemindersCount}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-xl w-full mx-auto px-3 sm:px-4 py-3 pb-24 overflow-x-hidden no-print">
+      {/* Main Container (Responsive: Mobile 1-col, Desktop 2-col) */}
+      <main className="flex-1 max-w-5xl xl:max-w-6xl w-full mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-5 pb-24 overflow-x-hidden no-print">
         {/* Optional Add-to-Home Screen prompt */}
         <InstallPromptBanner />
 
-        {/* Upcoming Bill / Pension Alert Pill */}
-        {upcomingReminder && (
-          <div className="bg-[#FAF9F5] border border-stone-300 rounded-xl px-3 py-2 mb-3 flex items-center justify-between gap-2 shadow-xs">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-base flex-shrink-0">{upcomingReminder.icon}</span>
-              <div className="text-xs text-stone-700 truncate">
-                <span className="font-bold text-stone-900">{upcomingReminder.title}</span>
-                <span className="text-stone-500 ml-1">
-                  (ทุกวันที่ {upcomingReminder.dayOfMonth})
-                </span>
+        {/* 2-Column Responsive Grid on Desktop */}
+        <div className="lg:grid lg:grid-cols-12 lg:gap-6 items-start">
+          
+          {/* Left Column on Desktop: Summary, Upcoming Reminder & Action Buttons */}
+          <div className="lg:col-span-5 xl:col-span-5 space-y-3 lg:space-y-4 lg:sticky lg:top-24">
+            {/* Upcoming Bill / Pension Alert Pill */}
+            {upcomingReminder && (
+              <div className="bg-[#FAF9F5] border border-stone-300 rounded-xl px-3 py-2 flex items-center justify-between gap-2 shadow-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-base flex-shrink-0">{upcomingReminder.icon}</span>
+                  <div className="text-xs text-stone-700 truncate">
+                    <span className="font-bold text-stone-900">{upcomingReminder.title}</span>
+                    <span className="text-stone-500 ml-1">
+                      (ทุกวันที่ {upcomingReminder.dayOfMonth})
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsRemindersOpen(true)}
+                  className="text-[11px] font-bold text-stone-800 underline flex-shrink-0 cursor-pointer"
+                >
+                  ดูรายการเตือน
+                </button>
               </div>
-            </div>
+            )}
 
-            <button
-              onClick={() => setIsRemindersOpen(true)}
-              className="text-[11px] font-bold text-stone-800 underline flex-shrink-0 cursor-pointer"
-            >
-              ดูรายการเตือน
-            </button>
+            {/* Big Balance & Period Summary Card */}
+            <SummaryCard
+              totalBalance={totalBalance}
+              todayIncome={todayIncome}
+              todayExpense={todayExpense}
+              monthIncome={monthIncome}
+              monthExpense={monthExpense}
+              soundEnabled={soundEnabled}
+              todayTransactions={todayTransactions}
+              onOpenShare={setShareModalData}
+            />
+
+            {/* 2 Big Action Buttons: Expense & Income */}
+            <MainActionButtons
+              onOpenExpense={handleOpenExpense}
+              onOpenIncome={handleOpenIncome}
+            />
           </div>
-        )}
 
-        {/* Big Balance & Period Summary Card */}
-        <SummaryCard
-          totalBalance={totalBalance}
-          todayIncome={todayIncome}
-          todayExpense={todayExpense}
-          monthIncome={monthIncome}
-          monthExpense={monthExpense}
-          soundEnabled={soundEnabled}
-          todayTransactions={todayTransactions}
-          onOpenShare={setShareModalData}
-        />
+          {/* Right Column on Desktop: Transaction History List */}
+          <div className="lg:col-span-7 xl:col-span-7 mt-3 lg:mt-0 space-y-3">
+            <TransactionList
+              transactions={bookTransactions}
+              onEdit={handleEditTransaction}
+              onDelete={handleDeleteTransaction}
+              soundEnabled={soundEnabled}
+            />
+          </div>
 
-        {/* 2 Big Action Buttons: Expense & Income */}
-        <MainActionButtons
-          onOpenExpense={handleOpenExpense}
-          onOpenIncome={handleOpenIncome}
-        />
-
-        {/* Transaction History List */}
-        <TransactionList
-          transactions={bookTransactions}
-          onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
-          soundEnabled={soundEnabled}
-        />
+        </div>
       </main>
 
       {/* Bottom Emergency Phone Bar */}
       {emergencyPhone && (
-        <div className="fixed bottom-0 inset-x-0 z-20 bg-white/95 backdrop-blur-md border-t border-stone-200 px-3 sm:px-4 py-2 no-print">
-          <div className="max-w-xl mx-auto flex items-center justify-between gap-2">
+        <div className="fixed bottom-0 inset-x-0 z-20 bg-white/95 backdrop-blur-md border-t border-stone-200 px-3 sm:px-4 lg:px-6 py-2 no-print">
+          <div className="max-w-5xl xl:max-w-6xl mx-auto flex items-center justify-between gap-2">
             <span className="text-xs sm:text-sm font-medium text-stone-600 truncate flex-1 min-w-0">
               ติดต่อ: {emergencyPhone}
             </span>

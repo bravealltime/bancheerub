@@ -32,8 +32,8 @@ export default function Header({
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 px-3 sm:px-4 py-2.5 sm:py-3 w-full no-print">
-      <div className="max-w-xl mx-auto flex items-center justify-between gap-2">
+    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 w-full no-print">
+      <div className="max-w-5xl xl:max-w-6xl mx-auto flex items-center justify-between gap-2">
         {/* Left: Switch Back Button & Current Book Name */}
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
           <button
@@ -107,7 +107,7 @@ export default function Header({
       </div>
 
       {/* Date & Reminders Banner */}
-      <div className="max-w-xl mx-auto mt-2 pt-1.5 border-t border-stone-100 flex flex-wrap items-center justify-between gap-1 text-[11px] sm:text-xs text-stone-500 font-medium">
+      <div className="max-w-5xl xl:max-w-6xl mx-auto mt-2 pt-1.5 border-t border-stone-100 flex flex-wrap items-center justify-between gap-1 text-[11px] sm:text-xs text-stone-500 font-medium">
         <span className="truncate">{formattedToday}</span>
         
         <div className="flex items-center gap-2.5 flex-shrink-0">

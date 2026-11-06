@@ -57,24 +57,24 @@ export default function ProfilePickerScreen({
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F4EF] p-4 sm:p-6 flex flex-col justify-center items-center">
-      <div className="max-w-md w-full mx-auto space-y-4">
+    <div className="min-h-screen bg-[#F6F4EF] p-4 sm:p-6 lg:p-8 flex flex-col justify-center items-center">
+      <div className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl w-full mx-auto space-y-6">
         
         {/* Top Header */}
-        <div className="text-center space-y-1 pb-2">
-          <div className="w-14 h-14 rounded-2xl bg-white border border-stone-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
+        <div className="text-center space-y-2 pb-1">
+          <div className="w-16 h-16 rounded-2xl bg-white border border-stone-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
             📒
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 pt-2 font-['Prompt']">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 pt-1 font-['Prompt']">
             สมุดเงินทอง ครอบครัว
           </h1>
-          <p className="text-sm sm:text-base text-stone-600 font-medium">
-            เลือกสมุดที่ต้องการดู (ใส่รหัส 4 ตัวเพื่อเข้าดู)
+          <p className="text-sm sm:text-base text-stone-600 font-medium max-w-md mx-auto">
+            เลือกสมุดที่ต้องการดู (ใส่รหัส PIN 4 ตัวเพื่อเข้าดู)
           </p>
         </div>
 
-        {/* Member Profile Books List (No Balance Displayed) */}
-        <div className="space-y-2.5">
+        {/* Member Profile Books Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {books.map((book) => {
             return (
               <div
@@ -83,16 +83,16 @@ export default function ProfilePickerScreen({
                   playTapSound();
                   onSelectBookWithPin(book);
                 }}
-                className="btn-tactile bg-white rounded-2xl p-4 border-2 border-stone-200 hover:border-stone-500 shadow-xs flex items-center justify-between gap-3 cursor-pointer transition-all"
+                className="btn-tactile bg-white rounded-2xl p-4 border-2 border-stone-200 hover:border-stone-500 hover:shadow-md shadow-xs flex items-center justify-between gap-3 cursor-pointer transition-all"
               >
                 {/* Left: Avatar & Info */}
-                <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                  <div className="w-13 h-13 rounded-2xl bg-[#EFECE6] border border-stone-300 flex items-center justify-center text-3xl flex-shrink-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EFECE6] border border-stone-300 flex items-center justify-center text-2xl flex-shrink-0">
                     {book.icon}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-lg sm:text-xl font-bold text-stone-900 truncate">
+                    <h2 className="text-base sm:text-lg font-bold text-stone-900 truncate">
                       สมุดของ {book.name}
                     </h2>
                     <p className="text-xs text-stone-500 truncate">
@@ -102,16 +102,16 @@ export default function ProfilePickerScreen({
                 </div>
 
                 {/* Right: Lock & Delete */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-stone-100 text-stone-600 text-xs font-semibold border border-stone-200">
-                    <Lock className="w-3.5 h-3.5 text-stone-500" />
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-stone-100 text-stone-600 text-[11px] font-semibold border border-stone-200">
+                    <Lock className="w-3 h-3 text-stone-500" />
                     <span>ใส่รหัส</span>
                   </div>
 
                   {books.length > 1 && (
                     <button
                       onClick={(e) => handleDelete(e, book)}
-                      className="p-1.5 rounded-xl text-stone-300 hover:text-red-600 hover:bg-stone-50 cursor-pointer"
+                      className="p-1 rounded-xl text-stone-300 hover:text-red-600 hover:bg-stone-50 cursor-pointer"
                       title="ลบสมุดนี้"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -121,22 +121,25 @@ export default function ProfilePickerScreen({
               </div>
             );
           })}
+
+          {/* Add New Profile Member Button */}
+          {!isAdding && (
+            <button
+              onClick={() => {
+                playTapSound();
+                setIsAdding(true);
+              }}
+              className="btn-tactile bg-white/70 hover:bg-white rounded-2xl p-4 border-2 border-dashed border-stone-300 hover:border-stone-500 text-stone-700 font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all min-h-[76px]"
+            >
+              <Plus className="w-5 h-5 text-stone-600" />
+              <span>+ เพิ่มสมุดใหม่</span>
+            </button>
+          )}
         </div>
 
-        {/* Add New Profile Member Button / Form */}
-        {!isAdding ? (
-          <button
-            onClick={() => {
-              playTapSound();
-              setIsAdding(true);
-            }}
-            className="btn-tactile w-full py-3 px-4 rounded-2xl bg-white border-2 border-dashed border-stone-300 hover:border-stone-500 text-stone-700 font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-          >
-            <Plus className="w-5 h-5 text-stone-600" />
-            <span>+ เพิ่มคน / เพิ่มสมุดใหม่</span>
-          </button>
-        ) : (
-          <div className="bg-white rounded-2xl p-4 border-2 border-stone-300 shadow-md space-y-3">
+        {/* Add New Profile Member Form */}
+        {isAdding && (
+          <div className="max-w-lg mx-auto bg-white rounded-2xl p-5 border-2 border-stone-300 shadow-md space-y-3.5">
             <div className="flex items-center justify-between pb-1 border-b border-stone-200">
               <h3 className="text-sm font-bold text-stone-900">
                 เพิ่มสมุดบัญชีใหม่
