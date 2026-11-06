@@ -62,6 +62,20 @@ export default function ProfilePickerScreen({
         
         {/* Top Header */}
         <div className="text-center space-y-2 pb-1">
+          {/* Quick link back to HomeSpace */}
+          <div className="flex justify-center pb-1">
+            <a
+              href="https://homespace-rose.vercel.app"
+              target="_top"
+              rel="noopener noreferrer"
+              className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300 shadow-xs cursor-pointer transition-all"
+            >
+              <span>🏡</span>
+              <span>กลับสู่ HomeSpace บ้านของเรา</span>
+              <span className="text-stone-400">→</span>
+            </a>
+          </div>
+
           <div className="w-16 h-16 rounded-2xl bg-white border border-stone-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
             📒
           </div>

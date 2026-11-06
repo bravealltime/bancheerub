@@ -364,6 +364,25 @@ export default function SettingsModal({
             </div>
           </div>
 
+          {/* Connected App: HomeSpace */}
+          <a
+            href="https://homespace-rose.vercel.app"
+            target="_top"
+            rel="noopener noreferrer"
+            className="btn-tactile p-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 flex items-center justify-between transition-colors block"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl">🏡</span>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-emerald-950">เปิด HomeSpace บ้านของเรา</p>
+                <p className="text-[10px] sm:text-xs text-emerald-700">กระดานครอบครัว, คะแนนงานบ้าน, ปฏิทิน</p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-emerald-800 bg-white/80 px-2 py-1 rounded-lg border border-emerald-200">
+              ไปที่แอป →
+            </span>
+          </a>
+
           {/* 5. Backup & Restore */}
           <div className="bg-[#FAF9F5] p-2.5 sm:p-3 rounded-2xl border border-stone-200 space-y-1.5">
             <label className="block text-xs sm:text-sm font-bold text-stone-800 truncate">

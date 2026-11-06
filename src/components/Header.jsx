@@ -63,6 +63,18 @@ export default function Header({
 
         {/* Right: Quick Action Controls */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Link to HomeSpace */}
+          <a
+            href="https://homespace-rose.vercel.app"
+            target="_top"
+            rel="noopener noreferrer"
+            title="กลับไปที่ HomeSpace บ้านของเรา"
+            className="btn-tactile flex items-center gap-1 px-2.5 h-9 sm:h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-xs sm:text-sm cursor-pointer transition-colors"
+          >
+            <span className="text-base">🏡</span>
+            <span className="hidden sm:inline">HomeSpace</span>
+          </a>
+
           {/* Sound Toggle */}
           <button
             onClick={() => {
