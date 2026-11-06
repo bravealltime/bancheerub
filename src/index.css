@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --app-font-scale: 1;
+  }
+  
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    font-family: 'Prompt', 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: calc(18px * var(--app-font-scale));
+    line-height: 1.45;
+    background-color: #F6F4EF;
+    color: #2D2A26;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input, textarea, select {
+    user-select: auto;
+    -webkit-user-select: auto;
+  }
+}
+
+.font-scale-normal {
+  --app-font-scale: 1;
+}
+
+.font-scale-large {
+  --app-font-scale: 1.15;
+}
+
+.font-scale-huge {
+  --app-font-scale: 1.25;
+}
+
+.btn-tactile {
+  transition: transform 0.08s ease, opacity 0.08s ease;
+}
+.btn-tactile:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+.text-wrap-safe {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D6D1C7;
+  border-radius: 9999px;
+}
+
+/* Print Styles for A4 Paper Report */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  body {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 14pt !important;
+    user-select: auto !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+}

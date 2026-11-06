@@ -1,0 +1,17 @@
+{
+  "name": "สมุดเงินทอง - บัญชีรายรับรายจ่าย",
+  "short_name": "สมุดเงินทอง",
+  "description": "แอปพลิเคชันจดรายรับรายจ่าย ตัวหนังสือใหญ่ ใช้งานง่าย สบายตา เหมาะสำหรับผู้สูงวัย",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FFFDF7",
+  "theme_color": "#15803D",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
