@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { X, Check, Mic, MicOff, Settings2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Check, Mic, MicOff, Settings2, Camera, Trash2, Eye } from 'lucide-react';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../data/defaultCategories';
 import { getTodayString, getCurrentTimeString } from '../utils/thaiDate';
 import { playTapSound, playSuccessSound, speakThai } from '../utils/audio';
 import { parseThaiVoiceInput } from '../utils/voiceParser';
+import { compressImage } from '../utils/imageCompressor';
 import confetti from 'canvas-confetti';
 
 export default function RecordModal(props) {
@@ -33,8 +34,12 @@ function RecordModalForm({
   const [amountStr, setAmountStr] = useState(() => editingItem ? String(editingItem.amount) : '');
   const [note, setNote] = useState(() => editingItem?.note || '');
   const [date, setDate] = useState(() => editingItem?.date || getTodayString());
+  const [image, setImage] = useState(() => editingItem?.image || null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [previewImageModal, setPreviewImageModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceHint, setVoiceHint] = useState('');
+  const fileInputRef = useRef(null);
 
   const isExpense = type === 'expense';
   const categories = isExpense ? expenseCategories : incomeCategories;
@@ -65,6 +70,24 @@ function RecordModalForm({
   const handleClearAmount = () => {
     playTapSound();
     setAmountStr('');
+  };
+
+  const handleImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    playTapSound();
+    setIsCompressing(true);
+    try {
+      const compressedBase64 = await compressImage(file, 700, 0.65);
+      setImage(compressedBase64);
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      alert('ไม่สามารถโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้งครับ');
+    } finally {
+      setIsCompressing(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleToggleVoice = () => {
@@ -157,7 +180,8 @@ function RecordModalForm({
       note: note.trim() || (selectedCategory ? selectedCategory.name : ''),
       date: date,
       time: editingItem ? editingItem.time : getCurrentTimeString(),
-      timestamp: editingItem ? editingItem.timestamp : Date.now()
+      timestamp: editingItem ? editingItem.timestamp : Date.now(),
+      image: image || null
     };
 
     onSave(itemData);
@@ -381,6 +405,70 @@ function RecordModalForm({
             </div>
           </div>
 
+          {/* D. Photo Slip / Receipt Attachment */}
+          <div className="space-y-1">
+            <label className="block text-[11px] font-semibold text-stone-600 px-0.5">
+              รูปสลิป / ใบเสร็จ / ซองยา (ถ้ามี):
+            </label>
+
+            {!image ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isCompressing}
+                  className="btn-tactile w-full py-2 px-3 rounded-xl bg-white border-2 border-dashed border-stone-300 hover:border-stone-500 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Camera className="w-4 h-4 text-stone-600" />
+                  <span>{isCompressing ? 'กำลังย่อขนาดรูปภาพ...' : '📷 ถ่ายรูป หรือ แนบรูปสลิป/ใบเสร็จ'}</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#FAF9F5] border border-stone-200">
+                <div 
+                  className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                  onClick={() => setPreviewImageModal(true)}
+                  title="แตะเพื่อดูรูปขนาดเต็ม"
+                >
+                  <img
+                    src={image}
+                    alt="สลิปหรือใบเสร็จ"
+                    className="w-11 h-11 object-cover rounded-lg border border-stone-300 flex-shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-stone-800 truncate">
+                      แนบรูปสลิปแล้ว
+                    </p>
+                    <p className="text-[11px] text-[#2D6A4F] flex items-center gap-1 font-semibold">
+                      <Eye className="w-3 h-3" />
+                      <span>แตะเพื่อดูรูปใหญ่</span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound();
+                    setImage(null);
+                  }}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-stone-100 cursor-pointer flex-shrink-0"
+                  title="ลบรูปออก"
+                  aria-label="ลบรูป"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* 3. Bottom Big Save Button */}
@@ -404,6 +492,30 @@ function RecordModalForm({
         </div>
 
       </div>
+
+      {/* Full-Screen Image Preview Modal */}
+      {previewImageModal && image && (
+        <div 
+          className="fixed inset-0 z-60 bg-black/85 flex flex-col items-center justify-center p-3 sm:p-4 animate-fade"
+          onClick={() => setPreviewImageModal(false)}
+        >
+          <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col items-center">
+            <button
+              onClick={() => setPreviewImageModal(false)}
+              className="absolute -top-11 right-0 text-white p-1.5 rounded-full bg-white/20 hover:bg-white/30 cursor-pointer"
+              aria-label="ปิดรูปภาพ"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={image}
+              alt="รูปสลิปหรือใบเสร็จขนาดเต็ม"
+              className="max-w-full max-h-[82vh] object-contain rounded-2xl border border-white/20 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

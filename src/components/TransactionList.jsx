@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Edit3, Volume2, Search } from 'lucide-react';
+import { Trash2, Edit3, Volume2, Search, Camera, X } from 'lucide-react';
 import { formatThaiDateHeader, formatCurrency } from '../utils/thaiDate';
 import { playTapSound, playDeleteSound, speakThai } from '../utils/audio';
 
@@ -14,6 +14,7 @@ export default function TransactionList({
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [viewingImage, setViewingImage] = useState(null);
 
   const filteredTransactions = transactions.filter((tx) => {
     if (filterType !== 'all' && tx.type !== filterType) return false;
@@ -210,7 +211,7 @@ export default function TransactionList({
                               </p>
                             )}
 
-                            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-stone-400 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] text-stone-400 mt-0.5">
                               {tx.time && <span>{tx.time} น.</span>}
                               
                               {/* Account badge if viewing all accounts */}
@@ -218,6 +219,22 @@ export default function TransactionList({
                                 <span className="px-1.5 py-0.2 rounded bg-stone-100 border border-stone-200 text-stone-600 font-medium">
                                   {accInfo.icon} {accInfo.name}
                                 </span>
+                              )}
+
+                              {/* Photo Slip / Receipt Badge */}
+                              {tx.image && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    playTapSound();
+                                    setViewingImage(tx.image);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-bold cursor-pointer transition-colors"
+                                  title="กดเพื่อดูรูปสลิป/ใบเสร็จ"
+                                >
+                                  <Camera className="w-3 h-3 text-amber-700" />
+                                  <span>ดูรูปสลิป</span>
+                                </button>
                               )}
                             </div>
                           </div>
@@ -288,6 +305,29 @@ export default function TransactionList({
                 ลบรายการ
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Full-Screen Receipt / Slip Viewer Modal */}
+      {viewingImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-3 sm:p-4 animate-fade no-print"
+          onClick={() => setViewingImage(null)}
+        >
+          <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col items-center">
+            <button
+              onClick={() => setViewingImage(null)}
+              className="absolute -top-11 right-0 text-white p-1.5 rounded-full bg-white/20 hover:bg-white/30 cursor-pointer"
+              aria-label="ปิดรูปภาพ"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={viewingImage}
+              alt="รูปสลิปหรือใบเสร็จ"
+              className="max-w-full max-h-[82vh] object-contain rounded-2xl border border-white/20 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         </div>
       )}
