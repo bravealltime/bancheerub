@@ -39,9 +39,11 @@ function RecordModalForm({
   const [isCompressing, setIsCompressing] = useState(false);
   const [previewImageModal, setPreviewImageModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [liveStreamingText, setLiveStreamingText] = useState('');
   const [voiceHint, setVoiceHint] = useState('');
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const isExpense = type === 'expense';
   const categories = isExpense ? expenseCategories : incomeCategories;
@@ -100,58 +102,106 @@ function RecordModalForm({
     }
 
     if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
       setIsListening(false);
       return;
     }
 
     try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
+
       const recognition = new SpeechRecognition();
       recognition.lang = 'th-TH';
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
 
       recognition.onstart = () => {
         setIsListening(true);
-        setVoiceHint('กำลังฟังเสียงพูด... พูดได้เลยครับ เช่น "ซื้อกับข้าว 80 บาท"');
+        setLiveStreamingText('');
+        setVoiceHint('กำลังฟังเสียงพูดสด... (Live)');
       };
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setVoiceTranscript(transcript);
-        setVoiceHint('ถอดเสียงพูดได้แล้วครับ');
+        let finalTranscript = '';
+        let interimTranscript = '';
 
-        const parsed = parseThaiVoiceInput(transcript);
-        if (parsed) {
-          if (parsed.type) {
-            setType(parsed.type);
-            const cats = parsed.type === 'expense' ? expenseCategories : incomeCategories;
-            const cat = cats.find(c => c.id === parsed.categoryId) || cats[0];
-            setSelectedCategory(cat);
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
           }
-          if (parsed.amount > 0) {
-            setAmountStr(String(parsed.amount));
-          }
-          if (parsed.note) {
-            setNote(parsed.note);
+        }
+
+        const streamingText = (finalTranscript + ' ' + interimTranscript).trim();
+        if (streamingText) {
+          setLiveStreamingText(streamingText);
+        }
+
+        const textToParse = finalTranscript.trim() || interimTranscript.trim();
+        if (textToParse) {
+          setVoiceTranscript(textToParse);
+          setVoiceHint('ถอดเสียงพูดได้แล้วครับ');
+
+          const parsed = parseThaiVoiceInput(textToParse);
+          if (parsed) {
+            if (parsed.type) {
+              setType(parsed.type);
+              const cats = parsed.type === 'expense' ? expenseCategories : incomeCategories;
+              const cat = cats.find(c => c.id === parsed.categoryId) || cats[0];
+              setSelectedCategory(cat);
+            }
+            if (parsed.amount > 0) {
+              setAmountStr(String(parsed.amount));
+            }
+            if (parsed.note) {
+              setNote(parsed.note);
+            }
           }
         }
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (e) => {
+        console.warn('Speech recognition error:', e);
         setIsListening(false);
+        recognitionRef.current = null;
         setVoiceHint('ไม่ได้ยินเสียง ลองแตะปุ่มไมโครโฟนแล้วพูดใหม่อีกครั้งครับ');
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        recognitionRef.current = null;
       };
 
+      recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
       setIsListening(false);
+      recognitionRef.current = null;
       console.error('Speech recognition error', err);
     }
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   React.useEffect(() => {
     if (autoStartVoice && !editingItem) {
@@ -267,53 +317,76 @@ function RecordModalForm({
         </div>
 
         {/* 2. Scrollable Body (Clean & Minimal) */}
-        <div className="p-4 overflow-y-auto space-y-3.5 flex-1">
-          {/* Active Listening Pulse Banner */}
+        <div className="p-4 overflow-y-auto space-y-3 flex-1">
+          {/* Active Listening Pulse Banner with Real-time Live Streaming */}
           {isListening && (
-            <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-3.5 text-center space-y-1.5 animate-pulse">
-              <div className="w-12 h-12 mx-auto rounded-full bg-rose-500 text-white flex items-center justify-center text-xl shadow-md">
-                🎙️
+            <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-3 text-center space-y-2 animate-fade shadow-xs">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-rose-800">
+                    กำลังฟังเสียงสด... (Live Streaming)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleVoice}
+                  className="text-xs font-bold text-rose-700 hover:text-rose-900 bg-rose-100 hover:bg-rose-200 px-2 py-0.5 rounded-lg cursor-pointer transition-colors"
+                >
+                  หยุดฟัง
+                </button>
               </div>
-              <p className="text-sm sm:text-base font-bold text-rose-900 leading-normal">
-                กำลังฟังเสียงพูดของคุณตาคุณยาย...
-              </p>
-              <p className="text-xs text-rose-700 leading-normal">
-                พูดได้เลยครับ เช่น "ซื้อกับข้าว 80 บาท" หรือ "ลูกให้เงิน 2,000 บาท"
-              </p>
+
+              {/* Live Streaming Speech Text Box */}
+              <div className="bg-white rounded-xl p-2.5 border border-rose-200 min-h-[46px] max-h-24 overflow-y-auto flex items-center justify-center">
+                <p className="text-xs sm:text-sm font-bold text-stone-900 break-words leading-relaxed text-center">
+                  {liveStreamingText || 'พูดได้เลยครับ เช่น "ซื้อกับข้าว 80" หรือ "ลูกให้ 1,000"'}
+                </p>
+              </div>
             </div>
           )}
 
-          {/* Voice Transcript Card (เมื่อพูดเสร็จแล้ว) */}
-          {voiceTranscript && (
-            <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-3.5 space-y-2 text-left animate-fade">
+          {/* Voice Transcript Card (เมื่อถอดเสียงได้แล้ว และไม่ได้กำลังฟังอยู่) */}
+          {voiceTranscript && !isListening && (
+            <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-2.5 sm:p-3 space-y-1.5 text-left animate-fade shadow-2xs">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-1.5">
-                  <span>🗣️</span> ถอดเสียงพูดได้ว่า (Transcript):
+                <span className="text-xs font-bold text-amber-900 flex items-center gap-1 truncate">
+                  <span>🗣️</span> ถอดเสียงได้ว่า:
                 </span>
                 <button
                   type="button"
                   onClick={handleToggleVoice}
-                  className="text-xs text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
+                  className="text-xs text-amber-800 hover:text-amber-950 font-semibold underline cursor-pointer shrink-0"
                 >
-                  แตะเพื่อพูดใหม่
+                  พูดใหม่ 🎙️
                 </button>
               </div>
 
-              <p className="text-sm sm:text-base font-bold text-stone-900 bg-white p-2.5 rounded-xl border border-amber-200 leading-normal break-words">
-                "{voiceTranscript}"
-              </p>
+              {/* Transcript Text Box - Bounded and easy to read */}
+              <div className="bg-white p-2 sm:p-2.5 rounded-xl border border-amber-200/90 max-h-20 overflow-y-auto">
+                <p className="text-xs sm:text-sm font-bold text-stone-900 leading-snug break-words">
+                  "{voiceTranscript}"
+                </p>
+              </div>
 
               {/* Extracted Details Pill Badges */}
-              <div className="flex items-center gap-1.5 flex-wrap text-xs font-semibold">
-                <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700">
-                  ประเภท: {type === 'expense' ? 'รายจ่าย 🔴' : 'รายรับ 🟢'}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px] sm:text-xs font-bold pt-0.5">
+                <span className={`px-2 py-0.5 rounded-lg border ${
+                  type === 'expense'
+                    ? 'bg-rose-50 text-[#E11D48] border-rose-200'
+                    : 'bg-emerald-50 text-[#059669] border-emerald-200'
+                }`}>
+                  {type === 'expense' ? '🔴 รายจ่าย' : '🟢 รายรับ'}
                 </span>
-                <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700">
-                  หมวด: {selectedCategory.icon} {selectedCategory.name}
+                <span className="px-2 py-0.5 rounded-lg bg-stone-100 text-stone-700 border border-stone-200">
+                  {selectedCategory.icon} {selectedCategory.name}
                 </span>
                 {amountStr && (
-                  <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-900 font-bold font-['Prompt']">
-                    ยอดเงิน: ฿{amountStr} บาท
+                  <span className="px-2 py-0.5 rounded-lg bg-stone-100 text-stone-900 border border-stone-200 font-['Prompt']">
+                    ฿{amountStr}
                   </span>
                 )}
               </div>
