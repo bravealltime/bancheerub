@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Trash2, Edit3, Volume2, Search, Camera, X } from 'lucide-react';
+import { Trash2, Edit3, Volume2, Search, Camera, X, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { formatThaiDateHeader, formatCurrency, formatBaht } from '../utils/thaiDate';
 import { playTapSound, playDeleteSound, speakThai } from '../utils/audio';
+import TransactionDetailModal from './TransactionDetailModal';
 
 export default function TransactionList({
   transactions = [],
@@ -9,12 +10,15 @@ export default function TransactionList({
   onDelete,
   soundEnabled,
   accounts = [],
-  activeAccountId: _activeAccountId = 'all'
+  activeAccountId: _activeAccountId = 'all',
+  currentBookName = 'ครอบครัว'
 }) {
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedQuickTag, setSelectedQuickTag] = useState('');
   const [itemToDelete, setItemToDelete] = useState(null);
   const [viewingImage, setViewingImage] = useState(null);
+  const [selectedTransactionForDetail, setSelectedTransactionForDetail] = useState(null);
 
   // 1. Compute chronological running balance across ALL transactions in the book (oldest to newest)
   const runningBalanceMap = useMemo(() => {
@@ -56,15 +60,43 @@ export default function TransactionList({
   const expenseCount = useMemo(() => transactions.filter(t => t.type === 'expense').length, [transactions]);
   const incomeCount = useMemo(() => transactions.filter(t => t.type === 'income').length, [transactions]);
 
-  // 2. Filter transactions based on active filter and search query
+  // Quick category tag filter list
+  const quickTags = [
+    { label: '🍲 กับข้าว', query: 'ข้าว' },
+    { label: '🛒 ของใช้', query: 'ของใช้' },
+    { label: '💊 ยา/หาหมอ', query: 'ยา' },
+    { label: '🚗 เดินทาง', query: 'รถ' },
+    { label: '💰 รายรับ', type: 'income' },
+    { label: '📷 มีรูปสลิป', hasImage: true },
+  ];
+
+  // 2. Filter transactions based on active filter, search query, and quick tags
   const filteredTransactions = transactions.filter((tx) => {
     if (filterType !== 'all' && tx.type !== filterType) return false;
+
+    // Quick tag filter
+    if (selectedQuickTag === '📷 มีรูปสลิป' && !tx.image) return false;
+    if (selectedQuickTag === '💰 รายรับ' && tx.type !== 'income') return false;
+    if (selectedQuickTag && selectedQuickTag !== '📷 มีรูปสลิป' && selectedQuickTag !== '💰 รายรับ') {
+      const tagObj = quickTags.find(t => t.label === selectedQuickTag);
+      if (tagObj?.query) {
+        const q = tagObj.query.toLowerCase();
+        const matchCat = (tx.category || '').toLowerCase().includes(q);
+        const matchNote = (tx.note || '').toLowerCase().includes(q);
+        if (!matchCat && !matchNote) return false;
+      }
+    }
+
+    // Search query filter (matches category, note, amount, and account)
     if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
       const matchCat = (tx.category || '').toLowerCase().includes(q);
       const matchNote = (tx.note || '').toLowerCase().includes(q);
-      if (!matchCat && !matchNote) return false;
+      const matchAmt = String(tx.amount || '').includes(q);
+      const matchDate = (tx.date || '').includes(q);
+      if (!matchCat && !matchNote && !matchAmt && !matchDate) return false;
     }
+
     return true;
   });
 
@@ -109,13 +141,13 @@ export default function TransactionList({
   return (
     <div className="mt-4 sm:mt-5 w-full">
       {/* Title & Filter Bar (iOS Style Segmented Control) */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3.5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-normal">
             ประวัติรายการ
           </h3>
           <p className="text-xs sm:text-sm text-stone-500 font-normal leading-normal">
-            ยอดเงินเข้า-ออก และเงินคงเหลือสะสม
+            แตะที่รายการเพื่อดูสเตตเมนต์/ทรานสคริปต์ฉบับเต็ม
           </p>
         </div>
 
@@ -163,40 +195,85 @@ export default function TransactionList({
         </div>
       </div>
 
-      {/* Search Bar */}
-      {transactions.length > 5 && (
-        <div className="relative mb-3.5 w-full">
+      {/* Always-Accessible Smart Search Bar */}
+      <div className="space-y-2 mb-3.5">
+        <div className="relative w-full">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ค้นหาตามหมวดหมู่ หรือข้อความ..."
-            className="w-full pl-9 pr-8 py-2 min-h-[40px] rounded-2xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-200 transition-all shadow-2xs"
+            placeholder="🔍 ค้นหาหมวดหมู่, หมายเหตุ, ยอดเงิน..."
+            className="w-full pl-10 pr-9 py-2.5 min-h-[44px] rounded-2xl bg-white border border-stone-200/90 text-xs sm:text-sm focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-200 transition-all shadow-2xs placeholder-stone-400"
           />
-          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
-          {searchQuery && (
+          <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5 pointer-events-none" />
+          
+          {(searchQuery || selectedQuickTag) && (
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-2.5 text-xs sm:text-sm text-stone-400 hover:text-stone-700 font-semibold cursor-pointer"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedQuickTag('');
+              }}
+              className="absolute right-3 top-3 text-xs sm:text-sm text-stone-400 hover:text-stone-700 font-semibold cursor-pointer p-0.5"
+              title="ล้างคำค้นหา"
             >
-              ล้าง
+              ✕ ล้าง
             </button>
           )}
         </div>
-      )}
+
+        {/* Quick Filter Tag Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+          <span className="text-stone-400 font-medium shrink-0 flex items-center gap-1 pl-1">
+            <SlidersHorizontal className="w-3 h-3" />
+            <span>กรองไว:</span>
+          </span>
+
+          {quickTags.map((tag) => {
+            const isActive = selectedQuickTag === tag.label;
+            return (
+              <button
+                key={tag.label}
+                type="button"
+                onClick={() => {
+                  playTapSound();
+                  setSelectedQuickTag(isActive ? '' : tag.label);
+                }}
+                className={`px-3 py-1 rounded-xl font-bold shrink-0 transition-all cursor-pointer border ${
+                  isActive
+                    ? 'bg-stone-800 text-white border-stone-800 shadow-2xs'
+                    : 'bg-white hover:bg-stone-100 text-stone-600 border-stone-200'
+                }`}
+              >
+                {tag.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Items Grouped by Date */}
       {sortedDates.length === 0 ? (
         <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-stone-200/70 shadow-xs my-3 space-y-2.5">
           <div className="text-4xl">📒✨</div>
           <p className="text-base sm:text-lg font-bold text-stone-800 leading-normal">
-            {searchQuery ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ยังไม่มีรายการในสมุดนี้'}
+            {(searchQuery || selectedQuickTag) ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ยังไม่มีรายการในสมุดนี้'}
           </p>
           <p className="text-xs sm:text-sm text-stone-500 max-w-sm mx-auto leading-relaxed">
-            {searchQuery
-              ? 'ลองค้นหาด้วยคำอื่น หรือกด "ล้าง" เพื่อดูรายการทั้งหมด'
+            {(searchQuery || selectedQuickTag)
+              ? 'ลองค้นหาด้วยคำอื่น หรือกด "ล้าง" ด้านบนเพื่อดูรายการทั้งหมดครับ'
               : 'แตะปุ่มสีแดงเพื่อ "จดรายจ่าย" หรือปุ่มสีเขียวเพื่อ "จดรายรับ" ด้านบนเพื่อเริ่มบันทึกได้เลยครับ'}
           </p>
+          {(searchQuery || selectedQuickTag) && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedQuickTag('');
+              }}
+              className="btn-tactile px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs sm:text-sm font-bold cursor-pointer"
+            >
+              แสดงรายการทั้งหมด
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -253,7 +330,12 @@ export default function TransactionList({
                     return (
                       <div
                         key={tx.id}
-                        className="group relative bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-stone-200/70 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.07)] hover:border-stone-300 transition-all duration-200"
+                        onClick={() => {
+                          playTapSound();
+                          setSelectedTransactionForDetail(tx);
+                        }}
+                        className="group relative bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-stone-200/70 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.07)] hover:border-stone-300 transition-all duration-200 cursor-pointer"
+                        title="แตะเพื่อดูสเตตเมนต์/ทรานสคริปต์ฉบับเต็ม"
                       >
                         <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-3">
                           {/* Left: Icon & Details */}
@@ -302,7 +384,7 @@ export default function TransactionList({
                                 )}
                               </div>
 
-                              {/* Note (if available) - No hard truncation */}
+                              {/* Note (if available) */}
                               {tx.note && (
                                 <p className="text-xs sm:text-sm text-stone-600 font-normal mt-0.5 break-words line-clamp-2 leading-relaxed">
                                   {tx.note}
@@ -339,13 +421,16 @@ export default function TransactionList({
                           {/* Right: Amount, Running Balance & Actions */}
                           <div className="flex flex-col items-end flex-shrink-0 text-right ml-auto">
                             {/* Transaction Amount */}
-                            <span
-                              className={`text-lg sm:text-xl lg:text-2xl font-bold font-['Prompt'] tracking-tight leading-normal ${
-                                isExpense ? 'text-[#E11D48]' : 'text-[#059669]'
-                              }`}
-                            >
-                              {isExpense ? '- ' : '+ '}฿{formatCurrency(tx.amount)}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`text-lg sm:text-xl lg:text-2xl font-bold font-['Prompt'] tracking-tight leading-normal ${
+                                  isExpense ? 'text-[#E11D48]' : 'text-[#059669]'
+                                }`}
+                              >
+                                {isExpense ? '- ' : '+ '}฿{formatCurrency(tx.amount)}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-stone-500 transition-colors" />
+                            </div>
 
                             {/* Running Balance */}
                             <span className="text-xs sm:text-sm font-semibold text-stone-500 font-['Prompt'] mt-0.5 leading-normal">
@@ -391,7 +476,28 @@ export default function TransactionList({
         </div>
       )}
 
-      {/* Confirmation Modal for Deletion */}
+      {/* 1. Transaction Detail & Full Statement Modal */}
+      {selectedTransactionForDetail && (
+        <TransactionDetailModal
+          isOpen={!!selectedTransactionForDetail}
+          transaction={selectedTransactionForDetail}
+          runningBalance={runningBalanceMap[selectedTransactionForDetail.id]}
+          onClose={() => setSelectedTransactionForDetail(null)}
+          onEdit={(tx) => {
+            setSelectedTransactionForDetail(null);
+            onEdit(tx);
+          }}
+          onDelete={(tx) => {
+            setSelectedTransactionForDetail(null);
+            setItemToDelete(tx);
+          }}
+          soundEnabled={soundEnabled}
+          currentBookName={currentBookName}
+          accountInfo={getAccountInfo(selectedTransactionForDetail.accountId)}
+        />
+      )}
+
+      {/* 2. Confirmation Modal for Deletion */}
       {itemToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-2xs p-4 animate-fade">
           <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-2xl text-center space-y-3.5">
@@ -422,7 +528,7 @@ export default function TransactionList({
         </div>
       )}
 
-      {/* Full-Screen Receipt / Slip Viewer Modal */}
+      {/* 3. Full-Screen Receipt / Slip Viewer Modal */}
       {viewingImage && (
         <div 
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-3 sm:p-4 animate-fade no-print"

@@ -2,52 +2,89 @@ import React from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { playTapSound } from '../utils/audio';
 
-export default function MainActionButtons({ onOpenExpense, onOpenIncome }) {
+export default function MainActionButtons({ onOpenExpense, onOpenIncome, onOpenVoice }) {
   return (
-    <div className="grid grid-cols-2 gap-3 my-3 sm:my-4 w-full">
-      {/* จดรายจ่าย */}
-      <button
-        onClick={() => {
-          playTapSound();
-          onOpenExpense();
-        }}
-        className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#E11D48] to-[#BE123C] hover:from-[#BE123C] hover:to-[#9F1239] text-white p-3.5 sm:p-4 min-h-[76px] rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-rose-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
-        aria-label="บันทึกรายจ่าย"
-      >
-        <div className="flex items-center justify-center gap-2 mb-1 max-w-full">
-          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-            <Minus className="w-3.5 h-3.5 stroke-[3]" />
+    <div className="space-y-2.5 my-3 sm:my-4 w-full">
+      {/* 2 Main Action Buttons: Expense & Income */}
+      <div className="grid grid-cols-2 gap-3 w-full">
+        {/* จดรายจ่าย */}
+        <button
+          type="button"
+          onClick={() => {
+            playTapSound();
+            onOpenExpense();
+          }}
+          className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#E11D48] to-[#BE123C] hover:from-[#BE123C] hover:to-[#9F1239] text-white p-3.5 sm:p-4 min-h-[76px] rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-rose-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
+          aria-label="บันทึกรายจ่าย"
+        >
+          <div className="flex items-center justify-center gap-2 mb-1 max-w-full">
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <Minus className="w-3.5 h-3.5 stroke-[3]" />
+            </div>
+            <span className="text-base sm:text-lg font-bold tracking-tight leading-normal">
+              จดรายจ่าย
+            </span>
           </div>
-          <span className="text-base sm:text-lg font-bold tracking-tight leading-normal">
-            จดรายจ่าย
+          <span className="text-xs sm:text-sm text-white/85 font-normal leading-normal text-wrap-safe">
+            กับข้าว, ค่ายา, ของใช้
           </span>
-        </div>
-        <span className="text-xs sm:text-sm text-white/85 font-normal leading-normal text-wrap-safe">
-          กับข้าว, ค่ายา, ของใช้
-        </span>
-      </button>
+        </button>
 
-      {/* จดรายรับ */}
-      <button
-        onClick={() => {
-          playTapSound();
-          onOpenIncome();
-        }}
-        className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065F46] text-white p-3.5 sm:p-4 min-h-[76px] rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-emerald-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
-        aria-label="บันทึกรายรับ"
-      >
-        <div className="flex items-center justify-center gap-2 mb-1 max-w-full">
-          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+        {/* จดรายรับ */}
+        <button
+          type="button"
+          onClick={() => {
+            playTapSound();
+            onOpenIncome();
+          }}
+          className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065F46] text-white p-3.5 sm:p-4 min-h-[76px] rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-emerald-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
+          aria-label="บันทึกรายรับ"
+        >
+          <div className="flex items-center justify-center gap-2 mb-1 max-w-full">
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            </div>
+            <span className="text-base sm:text-lg font-bold tracking-tight leading-normal">
+              จดรายรับ
+            </span>
           </div>
-          <span className="text-base sm:text-lg font-bold tracking-tight leading-normal">
-            จดรายรับ
+          <span className="text-xs sm:text-sm text-white/85 font-normal leading-normal text-wrap-safe">
+            ลูกให้, บำนาญ, ค้าขาย
           </span>
-        </div>
-        <span className="text-xs sm:text-sm text-white/85 font-normal leading-normal text-wrap-safe">
-          ลูกให้, บำนาญ, ค้าขาย
-        </span>
-      </button>
+        </button>
+      </div>
+
+      {/* 🎙️ Quick Voice Recorder Bar with Realtime Transcript Preview */}
+      {onOpenVoice && (
+        <button
+          type="button"
+          onClick={() => {
+            playTapSound();
+            onOpenVoice();
+          }}
+          className="w-full btn-tactile group relative overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white px-3.5 sm:px-4 py-2.5 min-h-[50px] rounded-2xl sm:rounded-3xl shadow-xs hover:shadow-md border border-amber-300/30 flex items-center justify-between text-left cursor-pointer transition-all"
+          aria-label="พูดเพื่อบันทึกด่วนพร้อมดูทรานสคริปต์"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-base sm:text-lg shrink-0 group-hover:scale-110 transition-transform">
+              🎙️
+            </span>
+            <div className="min-w-0">
+              <div className="font-bold text-xs sm:text-sm tracking-tight flex items-center gap-1.5 text-white">
+                <span>พูดเพื่อบันทึก (ดูทรานสคริปต์ทันที)</span>
+                <span className="text-[10px] sm:text-xs font-semibold bg-white/25 px-1.5 py-0.5 rounded-full text-white">เร็วสุด</span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-amber-100 font-normal truncate mt-0.5">
+                เช่น "ซื้อกับข้าว 80 บาท" หรือ "ลูกให้เงิน 2,000"
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-xs font-bold bg-white text-stone-900 px-3 py-1.5 rounded-xl shrink-0 group-hover:bg-amber-50 shadow-2xs">
+            <span>แตะแล้วพูด</span>
+            <span className="text-amber-600">🔊</span>
+          </div>
+        </button>
+      )}
     </div>
   );
 }

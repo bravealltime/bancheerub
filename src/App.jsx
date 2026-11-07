@@ -149,6 +149,7 @@ export default function App() {
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [recordModalType, setRecordModalType] = useState('expense');
   const [editingItem, setEditingItem] = useState(null);
+  const [autoStartVoice, setAutoStartVoice] = useState(false);
   const [isMonthlyReportOpen, setIsMonthlyReportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemindersOpen, setIsRemindersOpen] = useState(false);
@@ -393,18 +394,28 @@ export default function App() {
   const handleOpenExpense = () => {
     setEditingItem(null);
     setRecordModalType('expense');
+    setAutoStartVoice(false);
     setIsRecordModalOpen(true);
   };
 
   const handleOpenIncome = () => {
     setEditingItem(null);
     setRecordModalType('income');
+    setAutoStartVoice(false);
+    setIsRecordModalOpen(true);
+  };
+
+  const handleOpenVoice = () => {
+    setEditingItem(null);
+    setRecordModalType('expense');
+    setAutoStartVoice(true);
     setIsRecordModalOpen(true);
   };
 
   const handleEditTransaction = (item) => {
     setEditingItem(item);
     setRecordModalType(item.type);
+    setAutoStartVoice(false);
     setIsRecordModalOpen(true);
   };
 
@@ -577,10 +588,11 @@ export default function App() {
               onOpenShare={setShareModalData}
             />
 
-            {/* 2 Big Action Buttons: Expense & Income */}
+            {/* 2 Big Action Buttons: Expense & Income + Voice Quick Recorder */}
             <MainActionButtons
               onOpenExpense={handleOpenExpense}
               onOpenIncome={handleOpenIncome}
+              onOpenVoice={handleOpenVoice}
             />
           </div>
 
@@ -591,6 +603,7 @@ export default function App() {
               onEdit={handleEditTransaction}
               onDelete={handleDeleteTransaction}
               soundEnabled={soundEnabled}
+              currentBookName={currentBook?.name || 'ครอบครัว'}
             />
           </div>
 
@@ -620,7 +633,11 @@ export default function App() {
         isOpen={isRecordModalOpen}
         initialType={recordModalType}
         editingItem={editingItem}
-        onClose={() => setIsRecordModalOpen(false)}
+        autoStartVoice={autoStartVoice}
+        onClose={() => {
+          setIsRecordModalOpen(false);
+          setAutoStartVoice(false);
+        }}
         onSave={handleSaveTransaction}
         soundEnabled={soundEnabled}
         expenseCategories={expenseCategories}

@@ -28,7 +28,8 @@ function RecordModalForm({
   expenseCategories = EXPENSE_CATEGORIES,
   incomeCategories = INCOME_CATEGORIES,
   onOpenCategoryManager,
-  currentBook
+  currentBook,
+  autoStartVoice = false
 }) {
   const [type, setType] = useState(() => editingItem ? editingItem.type : initialType);
   const [amountStr, setAmountStr] = useState(() => editingItem ? String(editingItem.amount) : '');
@@ -39,6 +40,7 @@ function RecordModalForm({
   const [previewImageModal, setPreviewImageModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceHint, setVoiceHint] = useState('');
+  const [voiceTranscript, setVoiceTranscript] = useState('');
   const fileInputRef = useRef(null);
 
   const isExpense = type === 'expense';
@@ -110,12 +112,13 @@ function RecordModalForm({
 
       recognition.onstart = () => {
         setIsListening(true);
-        setVoiceHint('กำลังฟังเสียง... พูดได้เลยครับ');
+        setVoiceHint('กำลังฟังเสียงพูด... พูดได้เลยครับ เช่น "ซื้อกับข้าว 80 บาท"');
       };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        setVoiceHint(`ได้ยินว่า: "${transcript}"`);
+        setVoiceTranscript(transcript);
+        setVoiceHint('ถอดเสียงพูดได้แล้วครับ');
 
         const parsed = parseThaiVoiceInput(transcript);
         if (parsed) {
@@ -136,7 +139,7 @@ function RecordModalForm({
 
       recognition.onerror = () => {
         setIsListening(false);
-        setVoiceHint('ไม่ได้ยินเสียง ลองกดใหม่อีกครั้งครับ');
+        setVoiceHint('ไม่ได้ยินเสียง ลองแตะปุ่มไมโครโฟนแล้วพูดใหม่อีกครั้งครับ');
       };
 
       recognition.onend = () => {
@@ -149,6 +152,16 @@ function RecordModalForm({
       console.error('Speech recognition error', err);
     }
   };
+
+  React.useEffect(() => {
+    if (autoStartVoice && !editingItem) {
+      const timer = setTimeout(() => {
+        handleToggleVoice();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = () => {
     const numAmount = parseFloat(amountStr);
@@ -255,6 +268,57 @@ function RecordModalForm({
 
         {/* 2. Scrollable Body (Clean & Minimal) */}
         <div className="p-4 overflow-y-auto space-y-3.5 flex-1">
+          {/* Active Listening Pulse Banner */}
+          {isListening && (
+            <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-3.5 text-center space-y-1.5 animate-pulse">
+              <div className="w-12 h-12 mx-auto rounded-full bg-rose-500 text-white flex items-center justify-center text-xl shadow-md">
+                🎙️
+              </div>
+              <p className="text-sm sm:text-base font-bold text-rose-900 leading-normal">
+                กำลังฟังเสียงพูดของคุณตาคุณยาย...
+              </p>
+              <p className="text-xs text-rose-700 leading-normal">
+                พูดได้เลยครับ เช่น "ซื้อกับข้าว 80 บาท" หรือ "ลูกให้เงิน 2,000 บาท"
+              </p>
+            </div>
+          )}
+
+          {/* Voice Transcript Card (เมื่อพูดเสร็จแล้ว) */}
+          {voiceTranscript && (
+            <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-3.5 space-y-2 text-left animate-fade">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-1.5">
+                  <span>🗣️</span> ถอดเสียงพูดได้ว่า (Transcript):
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleVoice}
+                  className="text-xs text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
+                >
+                  แตะเพื่อพูดใหม่
+                </button>
+              </div>
+
+              <p className="text-sm sm:text-base font-bold text-stone-900 bg-white p-2.5 rounded-xl border border-amber-200 leading-normal break-words">
+                "{voiceTranscript}"
+              </p>
+
+              {/* Extracted Details Pill Badges */}
+              <div className="flex items-center gap-1.5 flex-wrap text-xs font-semibold">
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700">
+                  ประเภท: {type === 'expense' ? 'รายจ่าย 🔴' : 'รายรับ 🟢'}
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700">
+                  หมวด: {selectedCategory.icon} {selectedCategory.name}
+                </span>
+                {amountStr && (
+                  <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-900 font-bold font-['Prompt']">
+                    ยอดเงิน: ฿{amountStr} บาท
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* A. Amount Input Box + Quick Chips */}
           <div className="bg-[#FAF9F5] rounded-2xl p-3 border-2 border-stone-200 focus-within:border-stone-500 transition-colors text-center space-y-2">
@@ -265,7 +329,7 @@ function RecordModalForm({
             {/* Input with Currency Prefix & Mic Button */}
             <div className="flex items-center justify-center gap-2">
               <span className={`text-2xl sm:text-3xl font-bold font-['Prompt'] ${
-                isExpense ? 'text-[#BA3C2A]' : 'text-[#2D6A4F]'
+                isExpense ? 'text-[#E11D48]' : 'text-[#059669]'
               }`}>
                 ฿
               </span>
@@ -283,7 +347,7 @@ function RecordModalForm({
                 placeholder="0"
                 autoFocus
                 className={`w-40 sm:w-48 text-center text-3xl sm:text-4xl font-bold font-['Prompt'] bg-transparent focus:outline-none placeholder-stone-300 ${
-                  isExpense ? 'text-[#BA3C2A]' : 'text-[#2D6A4F]'
+                  isExpense ? 'text-[#E11D48]' : 'text-[#059669]'
                 }`}
               />
 
@@ -291,19 +355,20 @@ function RecordModalForm({
               <button
                 type="button"
                 onClick={handleToggleVoice}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
                   isListening
-                    ? 'bg-red-500 text-white animate-pulse shadow-md'
-                    : 'bg-white border border-stone-300 text-stone-600 hover:bg-stone-100 shadow-xs'
+                    ? 'bg-red-500 text-white animate-pulse shadow-md ring-2 ring-red-300'
+                    : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 shadow-xs'
                 }`}
-                title="แตะเพื่อพูดบอกจำนวนเงิน"
+                title="แตะเพื่อพูดบันทึกเสียง"
+                aria-label="พูดบันทึกเสียง"
               >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isListening ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-stone-700" />}
               </button>
             </div>
 
-            {/* Voice hint if active */}
-            {voiceHint && (
+            {/* Voice hint if active and no transcript yet */}
+            {voiceHint && !voiceTranscript && !isListening && (
               <p className="text-xs font-semibold text-stone-700 bg-white py-1 px-2.5 rounded-lg border border-stone-200 inline-block animate-fade">
                 {voiceHint}
               </p>
