@@ -27,6 +27,7 @@ import {
   saveBookToCloud,
   deleteBookFromCloud
 } from './services/ledgerApi';
+import { uploadReceiptPhotoToSupabase } from './services/supabase';
 
 export default function App() {
   // 1. Persistent State (Free of mock data)
@@ -408,13 +409,28 @@ export default function App() {
       .catch(() => setCloudStatus('offline'));
   };
 
-  const handleSaveTransaction = (item) => {
+  const handleSaveTransaction = async (item) => {
+    let processedItem = item;
     if (editingItem) {
       setTransactions(prev => prev.map(t => t.id === item.id ? item : t));
     } else {
       setTransactions(prev => [item, ...prev]);
     }
-    saveTransactionToCloud(item, 'family-main')
+
+    // Upload receipt photo to Supabase Storage if it's base64
+    if (item.receiptPhoto && item.receiptPhoto.startsWith('data:image')) {
+      try {
+        const cloudUrl = await uploadReceiptPhotoToSupabase(item.receiptPhoto, item.id);
+        if (cloudUrl && cloudUrl !== item.receiptPhoto) {
+          processedItem = { ...item, receiptPhoto: cloudUrl };
+          setTransactions(prev => prev.map(t => t.id === item.id ? processedItem : t));
+        }
+      } catch (e) {
+        console.warn('Receipt upload exception:', e);
+      }
+    }
+
+    saveTransactionToCloud(processedItem, 'family-main')
       .then(() => setCloudStatus('synced'))
       .catch(() => setCloudStatus('offline'));
   };
