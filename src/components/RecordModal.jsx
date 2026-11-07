@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Mic, MicOff, Settings2, Camera, Trash2, Eye } from 'lucide-react';
+import { X, Check, Mic, MicOff, Settings2, Camera, Trash2, Eye, Sparkles } from 'lucide-react';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../data/defaultCategories';
 import { getTodayString, getCurrentTimeString } from '../utils/thaiDate';
 import { playTapSound, playSuccessSound, speakThai } from '../utils/audio';
 import { parseThaiVoiceInput } from '../utils/voiceParser';
 import { compressImage } from '../utils/imageCompressor';
+import { scanSlipOrReceipt } from '../utils/slipOcrScanner';
 import confetti from 'canvas-confetti';
 
 export default function RecordModal(props) {
@@ -37,6 +38,8 @@ function RecordModalForm({
   const [date, setDate] = useState(() => editingItem?.date || getTodayString());
   const [image, setImage] = useState(() => editingItem?.image || null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isScanningSlip, setIsScanningSlip] = useState(false);
+  const [slipScanHint, setSlipScanHint] = useState('');
   const [previewImageModal, setPreviewImageModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [liveStreamingText, setLiveStreamingText] = useState('');
@@ -82,14 +85,38 @@ function RecordModalForm({
 
     playTapSound();
     setIsCompressing(true);
+    setIsScanningSlip(true);
+    setSlipScanHint('🔍 กำลังสแกนอ่านข้อมูลจากสลิป...');
+
     try {
-      const compressedBase64 = await compressImage(file, 700, 0.65);
+      const compressedBase64 = await compressImage(file, 900, 0.7);
       setImage(compressedBase64);
+
+      // Perform OCR scan on slip
+      const scanResult = await scanSlipOrReceipt(compressedBase64);
+      if (scanResult && scanResult.success && scanResult.amount > 0) {
+        setAmountStr(String(scanResult.amount));
+        if (scanResult.type) {
+          setType(scanResult.type);
+          const cats = scanResult.type === 'expense' ? expenseCategories : incomeCategories;
+          setSelectedCategory(cats[0] || { id: 'other', name: 'ทั่วไป', icon: '💰' });
+        }
+        if (scanResult.date) {
+          setDate(scanResult.date);
+        }
+        if (scanResult.bankName) {
+          setNote(prev => prev ? `${prev} (${scanResult.bankName})` : scanResult.bankName);
+        }
+        setSlipScanHint(`✅ สแกนสำเร็จ! ยอดเงิน: ฿${scanResult.amount} (${scanResult.bankName})`);
+      } else {
+        setSlipScanHint('แนบรูปสลิปเรียบร้อยแล้วครับ');
+      }
     } catch (err) {
-      console.error('Error compressing image:', err);
-      alert('ไม่สามารถโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้งครับ');
+      console.error('Error handling image/slip:', err);
+      setSlipScanHint('แนบรูปเรียบร้อยแล้วครับ');
     } finally {
       setIsCompressing(false);
+      setIsScanningSlip(false);
       if (e.target) e.target.value = '';
     }
   };
@@ -544,21 +571,35 @@ function RecordModalForm({
           </div>
 
           {/* D. Photo Slip / Receipt Attachment */}
-          <div className="space-y-1">
-            <label className="block text-xs sm:text-sm font-semibold text-stone-600 px-0.5">
-              รูปสลิป / ใบเสร็จ / ซองยา (ถ้ามี):
-            </label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between px-0.5">
+              <label className="text-xs sm:text-sm font-semibold text-stone-600">
+                รูปสลิป / ใบเสร็จ (อ่านยอดเงินอัตโนมัติ):
+              </label>
+              {isScanningSlip && (
+                <span className="text-[11px] font-bold text-amber-700 animate-pulse flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  <span>กำลังสแกน...</span>
+                </span>
+              )}
+            </div>
 
             {!image ? (
               <div>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isCompressing}
-                  className="btn-tactile w-full py-2 px-3 rounded-xl bg-white border-2 border-dashed border-stone-300 hover:border-stone-500 text-stone-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  disabled={isCompressing || isScanningSlip}
+                  className="btn-tactile w-full py-2.5 px-3 rounded-2xl bg-white border-2 border-dashed border-stone-300 hover:border-amber-500 text-stone-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-2xs hover:bg-amber-50/40 transition-colors"
                 >
-                  <Camera className="w-4 h-4 text-stone-600" />
-                  <span>{isCompressing ? 'กำลังย่อขนาดรูปภาพ...' : '📷 ถ่ายรูป หรือ แนบรูปสลิป/ใบเสร็จ'}</span>
+                  <Camera className="w-4 h-4 text-amber-600" />
+                  <span>
+                    {isScanningSlip
+                      ? '🔍 กำลังสแกนอ่านยอดเงิน...'
+                      : isCompressing
+                      ? 'กำลังประมวลผลรูปภาพ...'
+                      : '📸 ถ่ายรูป หรือ แนบสลิป/ใบเสร็จ (อ่านเลขอัตโนมัติ)'}
+                  </span>
                 </button>
                 <input
                   ref={fileInputRef}
@@ -569,40 +610,59 @@ function RecordModalForm({
                 />
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#FAF9F5] border border-stone-200">
-                <div 
-                  className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
-                  onClick={() => setPreviewImageModal(true)}
-                  title="แตะเพื่อดูรูปขนาดเต็ม"
-                >
-                  <img
-                    src={image}
-                    alt="สลิปหรือใบเสร็จ"
-                    className="w-11 h-11 object-cover rounded-lg border border-stone-300 flex-shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-stone-800 truncate">
-                      แนบรูปสลิปแล้ว
-                    </p>
-                    <p className="text-xs text-[#2D6A4F] flex items-center gap-1 font-semibold">
-                      <Eye className="w-3 h-3" />
-                      <span>แตะเพื่อดูรูปใหญ่</span>
-                    </p>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-[#FAF9F5] border border-stone-200">
+                  <div 
+                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+                    onClick={() => setPreviewImageModal(true)}
+                    title="แตะเพื่อดูรูปขนาดเต็ม"
+                  >
+                    <img
+                      src={image}
+                      alt="สลิปหรือใบเสร็จ"
+                      className="w-11 h-11 object-cover rounded-xl border border-stone-300 flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-bold text-stone-800 truncate">
+                        แนบรูปสลิปแล้ว
+                      </p>
+                      <p className="text-xs text-[#2D6A4F] flex items-center gap-1 font-semibold">
+                        <Eye className="w-3 h-3" />
+                        <span>แตะเพื่อดูรูปใหญ่</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-xs cursor-pointer"
+                      title="เปลี่ยนรูปสลิปใหม่"
+                    >
+                      เปลี่ยนรูป
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playTapSound();
+                        setImage(null);
+                        setSlipScanHint('');
+                      }}
+                      className="w-8 h-8 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="ลบรูปภาพ"
+                      aria-label="ลบรูปภาพ"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    playTapSound();
-                    setImage(null);
-                  }}
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-stone-100 cursor-pointer flex-shrink-0"
-                  title="ลบรูปออก"
-                  aria-label="ลบรูป"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {slipScanHint && (
+                  <p className="text-[11px] font-semibold text-stone-600 bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200 flex items-center gap-1">
+                    <span>💡</span> {slipScanHint}
+                  </p>
+                )}
               </div>
             )}
           </div>

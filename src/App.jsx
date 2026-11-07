@@ -653,6 +653,7 @@ export default function App() {
         soundEnabled={soundEnabled}
         totalBalance={totalBalance}
         onOpenShare={setShareModalData}
+        currentBookName={currentBook?.name || 'ครอบครัว'}
       />
 
       <SettingsModal

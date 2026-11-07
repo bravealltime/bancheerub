@@ -44,43 +44,52 @@ export default function PrintReportView({
   const printedDate = formatThaiDateFull(getTodayString());
 
   return (
-    <div className="print-only p-4 bg-white text-black font-['Sarabun']">
-      {/* Header */}
-      <div className="border-b-2 border-black pb-4 mb-5 text-center">
-        <h1 className="text-2xl font-bold">สมุดบันทึกรายรับ-รายจ่าย</h1>
-        <p className="text-base mt-1">
-          ประจำเดือน {formatThaiMonth(selectedMonth)} • ผู้บันทึก: {userName || 'คุณตาคุณยาย'}
-        </p>
+    <div className="print-only p-6 bg-white text-black font-['Sarabun']">
+      {/* Authentic Bank Passbook Header */}
+      <div className="border-b-2 border-stone-800 pb-3 mb-4 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-black tracking-tight">สมุดบัญชีเงินฝากครอบครัว</span>
+            <span className="text-xs px-2 py-0.5 rounded border border-black font-bold">PASSBOOK</span>
+          </div>
+          <p className="text-xs mt-1 text-stone-700">
+            เลขที่บัญชี: 889-01452-9 • ชื่อบัญชี: <strong>{userName || 'ครอบครัว'}</strong> • ประจำเดือน: <strong>{formatThaiMonth(selectedMonth)}</strong>
+          </p>
+        </div>
+        <div className="text-right text-xs">
+          <div className="font-bold">สาขา: ในครอบครัว</div>
+          <div className="text-stone-500">พิมพ์เมื่อ: {printedDate}</div>
+        </div>
       </div>
 
       {/* Summary Box */}
-      <div className="grid grid-cols-3 border border-black mb-6 text-center text-sm">
-        <div className="p-3 border-r border-black">
-          <div className="text-xs">เงินเข้ารวม (รายรับ)</div>
-          <div className="text-lg font-bold mt-1 text-[#2D6A4F]">+฿{formatCurrency(totalIncome)} บาท</div>
+      <div className="grid grid-cols-3 border border-stone-800 mb-5 text-center text-xs">
+        <div className="p-2.5 border-r border-stone-800">
+          <div className="text-[11px] text-stone-600">ฝากเข้ารวม (+)</div>
+          <div className="text-base font-bold mt-0.5 text-[#059669]">+฿{formatCurrency(totalIncome)} บาท</div>
         </div>
-        <div className="p-3 border-r border-black">
-          <div className="text-xs">เงินออกรวม (รายจ่าย)</div>
-          <div className="text-lg font-bold mt-1 text-[#BA3C2A]">-฿{formatCurrency(totalExpense)} บาท</div>
+        <div className="p-2.5 border-r border-stone-800">
+          <div className="text-[11px] text-stone-600">ถอนออกรวม (-)</div>
+          <div className="text-base font-bold mt-0.5 text-[#E11D48]">-฿{formatCurrency(totalExpense)} บาท</div>
         </div>
-        <div className="p-3">
-          <div className="text-xs">เงินคงเหลือสุทธิ</div>
-          <div className="text-lg font-bold mt-1">
+        <div className="p-2.5">
+          <div className="text-[11px] text-stone-600">ยอดคงเหลือสุทธิประจำเดือน</div>
+          <div className="text-base font-bold mt-0.5 text-stone-900">
             {netSavings >= 0 ? '+' : '-'}฿{formatCurrency(Math.abs(netSavings))} บาท
           </div>
         </div>
       </div>
 
-      {/* Itemized Table */}
-      <h2 className="text-base font-bold mb-2">รายการทั้งหมดในเดือนนี้ ({monthTransactions.length} รายการ)</h2>
-      <table className="w-full text-left text-xs border border-black">
+      {/* Itemized Passbook Table */}
+      <h2 className="text-xs font-bold mb-1.5">รายการความเคลื่อนไหวทั้งหมด ({monthTransactions.length} รายการ)</h2>
+      <table className="w-full text-left text-xs border border-stone-800">
         <thead>
-          <tr className="bg-stone-100 border-b border-black">
-            <th className="p-2 border-r border-black w-24">วันที่</th>
-            <th className="p-2 border-r border-black">หมวดหมู่</th>
-            <th className="p-2 border-r border-black">รายละเอียด / หมายเหตุ</th>
-            <th className="p-2 border-r border-black w-20 text-center">ประเภท</th>
-            <th className="p-2 border-r border-black text-right w-28">จำนวนเงิน (บาท)</th>
+          <tr className="bg-stone-100 border-b border-stone-800 text-stone-900 font-bold">
+            <th className="p-2 border-r border-stone-800 w-24">ว/ด/ป</th>
+            <th className="p-2 border-r border-stone-800 w-28">หมวดหมู่</th>
+            <th className="p-2 border-r border-stone-800">รายละเอียด / หมายเหตุ</th>
+            <th className="p-2 border-r border-stone-800 text-right w-24 text-[#E11D48]">ถอนออก (-)</th>
+            <th className="p-2 border-r border-stone-800 text-right w-24 text-[#059669]">ฝากเข้า (+)</th>
             <th className="p-2 text-right w-28">ยอดคงเหลือ (บาท)</th>
           </tr>
         </thead>
@@ -92,14 +101,17 @@ export default function PrintReportView({
           ) : (
             monthTransactions.map((tx) => (
               <tr key={tx.id} className="border-b border-stone-300">
-                <td className="p-2 border-r border-black whitespace-nowrap">{tx.date}</td>
-                <td className="p-2 border-r border-black font-semibold">{tx.category}</td>
-                <td className="p-2 border-r border-black">{tx.note || '-'}</td>
-                <td className="p-2 border-r border-black text-center font-bold">
-                  {tx.type === 'income' ? 'รายรับ' : 'รายจ่าย'}
+                <td className="p-2 border-r border-stone-800 whitespace-nowrap">
+                  <div>{tx.date}</div>
+                  {tx.time && <div className="text-[10px] text-stone-500">{tx.time} น.</div>}
                 </td>
-                <td className="p-2 border-r border-black text-right font-bold whitespace-nowrap">
-                  {tx.type === 'expense' ? '-' : '+'}฿{formatCurrency(tx.amount)}
+                <td className="p-2 border-r border-stone-800 font-semibold">{tx.category}</td>
+                <td className="p-2 border-r border-stone-800">{tx.note || '-'}</td>
+                <td className="p-2 border-r border-stone-800 text-right font-bold text-[#E11D48] whitespace-nowrap">
+                  {tx.type === 'expense' ? `-${formatCurrency(tx.amount)}` : '-'}
+                </td>
+                <td className="p-2 border-r border-stone-800 text-right font-bold text-[#059669] whitespace-nowrap">
+                  {tx.type === 'income' ? `+${formatCurrency(tx.amount)}` : '-'}
                 </td>
                 <td className="p-2 text-right font-bold whitespace-nowrap">
                   {formatBaht(runningBalanceMap[tx.id] ?? 0)}
@@ -111,10 +123,10 @@ export default function PrintReportView({
       </table>
 
       {/* Signature & Date */}
-      <div className="mt-8 pt-4 flex justify-between text-xs">
-        <div>พิมพ์เมื่อ: {printedDate}</div>
+      <div className="mt-8 pt-4 flex justify-between text-xs border-t border-dashed border-stone-400">
+        <div>• เอกสารฉบับนี้พิมพ์จากระบบสมุดเงินทอง ครอบครัว (บันทึกเมื่อ: {printedDate})</div>
         <div className="text-right">
-          <div>ลงชื่อ: ....................................................</div>
+          <div>ลงชื่อ: .................................................... ผู้บันทึก</div>
           <div className="mt-1">({userName || 'คุณตาคุณยาย'})</div>
         </div>
       </div>

@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
-import { X, Calendar, Volume2, Share2, Printer } from 'lucide-react';
+import { X, Calendar, Volume2, Share2, Printer, BookOpen, PieChart, ListFilter } from 'lucide-react';
 import { formatCurrency, formatThaiMonth, getTodayString } from '../utils/thaiDate';
 import { playTapSound, speakThai } from '../utils/audio';
 import { shareSummary, generateSummaryText } from '../utils/shareLine';
+import DonutChart from './DonutChart';
+import PassbookViewModal from './PassbookViewModal';
 
 export default function MonthlyReportModal({
   isOpen,
   onClose,
-  transactions,
+  transactions = [],
   soundEnabled,
   totalBalance,
-  onOpenShare
+  onOpenShare,
+  currentBookName = 'คุณตาคุณยาย'
 }) {
   const currentYearMonth = getTodayString().slice(0, 7);
   const [selectedMonth, setSelectedMonth] = useState(currentYearMonth);
   const [shareFeedback, setShareFeedback] = useState('');
+  const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'bars'
+  const [isPassbookOpen, setIsPassbookOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -152,24 +157,36 @@ export default function MonthlyReportModal({
             </select>
           </div>
 
-          {/* Quick Action Buttons: Share to LINE & Print to Paper */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Quick Action Buttons: Share to LINE, Bank Passbook PDF, & Print to Paper */}
+          <div className="grid grid-cols-3 gap-2">
             <button
               onClick={handleShareToLine}
-              className="btn-tactile py-2 px-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-w-0"
-              title="ส่งสรุปเข้า LINE ให้ลูกหลานดู"
+              className="btn-tactile py-2 px-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-w-0"
+              title="ส่งสรุปเข้า LINE ให้คนในบ้านดู"
             >
               <Share2 className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="truncate">{shareFeedback || 'แชร์เข้า LINE'}</span>
             </button>
 
             <button
+              onClick={() => {
+                playTapSound();
+                setIsPassbookOpen(true);
+              }}
+              className="btn-tactile py-2 px-2 rounded-xl bg-[#14233C] hover:bg-[#0F1B2F] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-w-0"
+              title="ดูหน้าสมุดบัญชีเงินฝากและดาวน์โหลด PDF"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+              <span className="truncate">สมุดบัญชี (PDF)</span>
+            </button>
+
+            <button
               onClick={handlePrint}
-              className="btn-tactile py-2 px-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs flex items-center justify-center gap-1.5 border border-stone-300 cursor-pointer min-w-0"
-              title="พิมพ์สรุปลงกระดาษ A4 หรือบันทึกเป็น PDF"
+              className="btn-tactile py-2 px-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs flex items-center justify-center gap-1.5 border border-stone-300 cursor-pointer min-w-0"
+              title="พิมพ์สรุปลงกระดาษ A4"
             >
               <Printer className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="truncate">พิมพ์ลงกระดาษ A4</span>
+              <span className="truncate">พิมพ์ A4</span>
             </button>
           </div>
 
@@ -188,14 +205,14 @@ export default function MonthlyReportModal({
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-[#FAF9F5] rounded-xl p-2.5 sm:p-3 border border-stone-200 min-w-0">
               <div className="text-stone-500 text-xs sm:text-sm font-semibold mb-0.5 truncate">เงินเข้ารวม</div>
-              <div className="text-[#2D6A4F] font-bold text-base sm:text-lg font-['Prompt'] break-all">
+              <div className="text-[#059669] font-bold text-base sm:text-lg font-['Prompt'] break-all">
                 +฿{formatCurrency(totalIncome)}
               </div>
             </div>
 
             <div className="bg-[#FAF9F5] rounded-xl p-2.5 sm:p-3 border border-stone-200 min-w-0">
               <div className="text-stone-500 text-xs sm:text-sm font-semibold mb-0.5 truncate">เงินออกรวม</div>
-              <div className="text-[#BA3C2A] font-bold text-base sm:text-lg font-['Prompt'] break-all">
+              <div className="text-[#E11D48] font-bold text-base sm:text-lg font-['Prompt'] break-all">
                 -฿{formatCurrency(totalExpense)}
               </div>
             </div>
@@ -203,23 +220,67 @@ export default function MonthlyReportModal({
             <div className="col-span-2 bg-[#FAF9F5] rounded-xl p-2.5 sm:p-3 border border-stone-200 min-w-0">
               <div className="text-stone-500 text-xs sm:text-sm font-semibold mb-0.5 truncate">เงินเหลือเก็บในเดือนนี้</div>
               <div className={`text-xl sm:text-2xl font-bold font-['Prompt'] break-all ${
-                netSavings >= 0 ? 'text-[#2D6A4F]' : 'text-[#BA3C2A]'
+                netSavings >= 0 ? 'text-[#059669]' : 'text-[#E11D48]'
               }`}>
                 {netSavings >= 0 ? '+' : '-'}฿{formatCurrency(Math.abs(netSavings))}
               </div>
             </div>
           </div>
 
-          {/* Spending Breakdown */}
-          <div>
-            <h4 className="font-bold text-xs sm:text-sm text-stone-900 mb-2 truncate">
-              เงินออกไปกับอะไรบ้าง
-            </h4>
+          {/* Spending Breakdown & Donut Chart Toggle */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="font-bold text-xs sm:text-sm text-stone-900 truncate">
+                เงินออกไปกับอะไรบ้าง
+              </h4>
+
+              {/* View Toggle */}
+              {sortedExpenses.length > 0 && (
+                <div className="flex items-center bg-stone-200/80 p-0.5 rounded-xl text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTapSound();
+                      setViewMode('chart');
+                    }}
+                    className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                      viewMode === 'chart'
+                        ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    <PieChart className="w-3.5 h-3.5" />
+                    <span>กราฟวงกลม</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTapSound();
+                      setViewMode('bars');
+                    }}
+                    className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                      viewMode === 'bars'
+                        ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    <ListFilter className="w-3.5 h-3.5" />
+                    <span>รายการหมวด</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {sortedExpenses.length === 0 ? (
               <p className="text-xs text-stone-500 italic p-3 text-center bg-[#FAF9F5] rounded-xl">
                 ไม่มีรายจ่ายในเดือนนี้
               </p>
+            ) : viewMode === 'chart' ? (
+              <DonutChart
+                items={sortedExpenses}
+                totalAmount={totalExpense}
+                title="เงินออกรวม"
+              />
             ) : (
               <div className="space-y-1.5 sm:space-y-2">
                 {sortedExpenses.map((catItem) => {
@@ -233,7 +294,7 @@ export default function MonthlyReportModal({
                           <span className="truncate">{catItem.category}</span>
                         </div>
                         <div className="flex-shrink-0 text-right whitespace-nowrap">
-                          <span className="text-[#BA3C2A] font-bold">
+                          <span className="text-[#E11D48] font-bold">
                             ฿{formatCurrency(catItem.total)}
                           </span>
                           <span className="text-stone-400 ml-1 text-xs font-medium">
@@ -244,7 +305,7 @@ export default function MonthlyReportModal({
 
                       <div className="w-full bg-stone-200 h-1.5 sm:h-2 rounded-full overflow-hidden">
                         <div
-                          className="bg-[#BA3C2A] h-full rounded-full transition-all"
+                          className="bg-[#E11D48] h-full rounded-full transition-all"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
@@ -269,6 +330,19 @@ export default function MonthlyReportModal({
           </button>
         </div>
       </div>
+
+      {/* Virtual Bank Passbook Modal */}
+      {isPassbookOpen && (
+        <PassbookViewModal
+          isOpen={isPassbookOpen}
+          onClose={() => setIsPassbookOpen(false)}
+          transactions={transactions}
+          currentBookName={currentBookName}
+          selectedMonth={selectedMonth}
+          onOpenShare={onOpenShare}
+          soundEnabled={soundEnabled}
+        />
+      )}
     </div>
   );
 }
