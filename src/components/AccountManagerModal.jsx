@@ -156,7 +156,7 @@ export default function AccountManagerModal({
 
               {/* Emoji Picker */}
               <div>
-                <label className="block text-[11px] font-medium text-stone-600 mb-1">เลือกรูปไอคอน:</label>
+                <label className="block text-xs font-medium text-stone-600 mb-1">เลือกรูปไอคอน:</label>
                 <div className="flex gap-1.5 flex-wrap p-1 bg-white rounded-lg border border-stone-200">
                   {ACCOUNT_EMOJIS.map(emoji => (
                     <button
@@ -223,13 +223,13 @@ export default function AccountManagerModal({
                           {acc.name}
                         </span>
                         {isCurrent && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] bg-stone-800 text-white font-semibold">
+                          <span className="px-1.5 py-0.5 rounded text-xs bg-stone-800 text-white font-semibold leading-none">
                             กำลังเลือกดู
                           </span>
                         )}
                       </div>
                       {acc.description && (
-                        <p className="text-[11px] text-stone-500 truncate">
+                        <p className="text-xs text-stone-500 truncate">
                           {acc.description}
                         </p>
                       )}

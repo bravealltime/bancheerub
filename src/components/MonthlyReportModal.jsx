@@ -187,21 +187,21 @@ export default function MonthlyReportModal({
           {/* 3 Summary Cards */}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-[#FAF9F5] rounded-xl p-2.5 sm:p-3 border border-stone-200 min-w-0">
-              <div className="text-stone-500 text-[11px] sm:text-xs font-semibold mb-0.5 truncate">เงินเข้ารวม</div>
+              <div className="text-stone-500 text-xs sm:text-sm font-semibold mb-0.5 truncate">เงินเข้ารวม</div>
               <div className="text-[#2D6A4F] font-bold text-base sm:text-lg font-['Prompt'] break-all">
                 +฿{formatCurrency(totalIncome)}
               </div>
             </div>
 
             <div className="bg-[#FAF9F5] rounded-xl p-2.5 sm:p-3 border border-stone-200 min-w-0">
-              <div className="text-stone-500 text-[11px] sm:text-xs font-semibold mb-0.5 truncate">เงินออกรวม</div>
+              <div className="text-stone-500 text-xs sm:text-sm font-semibold mb-0.5 truncate">เงินออกรวม</div>
               <div className="text-[#BA3C2A] font-bold text-base sm:text-lg font-['Prompt'] break-all">
                 -฿{formatCurrency(totalExpense)}
               </div>
             </div>
 
             <div className="col-span-2 bg-[#FAF9F5] rounded-xl p-2.5 sm:p-3 border border-stone-200 min-w-0">
-              <div className="text-stone-500 text-[11px] sm:text-xs font-semibold mb-0.5 truncate">เงินเหลือเก็บในเดือนนี้</div>
+              <div className="text-stone-500 text-xs sm:text-sm font-semibold mb-0.5 truncate">เงินเหลือเก็บในเดือนนี้</div>
               <div className={`text-xl sm:text-2xl font-bold font-['Prompt'] break-all ${
                 netSavings >= 0 ? 'text-[#2D6A4F]' : 'text-[#BA3C2A]'
               }`}>
@@ -236,7 +236,7 @@ export default function MonthlyReportModal({
                           <span className="text-[#BA3C2A] font-bold">
                             ฿{formatCurrency(catItem.total)}
                           </span>
-                          <span className="text-stone-400 ml-1 text-[11px]">
+                          <span className="text-stone-400 ml-1 text-xs font-medium">
                             ({percent}%)
                           </span>
                         </div>

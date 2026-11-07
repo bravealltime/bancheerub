@@ -52,7 +52,7 @@ export default function InstallPromptBanner() {
               <div className="text-xs sm:text-sm font-bold text-stone-900 truncate">
                 เก็บบัญชีนี้ไว้บนหน้าจอมือถือ
               </div>
-              <div className="text-[11px] sm:text-xs text-stone-600 truncate">
+              <div className="text-xs sm:text-sm text-stone-600 truncate leading-normal">
                 เปิดกดใช้งานง่ายๆ เหมือนแอปทั่วไป
               </div>
             </div>

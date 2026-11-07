@@ -242,51 +242,54 @@ export default function SettingsModal({
 
           {/* 1. Font Size */}
           <div className="bg-[#FAF9F5] p-2.5 sm:p-3 rounded-2xl border border-stone-200">
-            <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5 flex items-center gap-1.5 truncate">
-              <Type className="w-3.5 h-3.5 text-stone-600 flex-shrink-0" />
-              <span>ขนาดตัวหนังสือ:</span>
+            <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-2 flex items-center gap-1.5 truncate">
+              <Type className="w-4 h-4 text-stone-600 flex-shrink-0" />
+              <span>ขนาดตัวหนังสือ (สำหรับผู้สูงวัย):</span>
             </label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => {
                   playTapSound();
                   onChangeFontSize('normal');
+                  if (soundEnabled) speakThai('ปรับขนาดตัวหนังสือเป็นขนาดปกติครับ');
                 }}
-                className={`btn-tactile p-1.5 sm:p-2 rounded-xl border text-center transition-all cursor-pointer min-w-0 ${
+                className={`btn-tactile py-2.5 px-2 min-h-[44px] rounded-xl border text-center transition-all cursor-pointer min-w-0 ${
                   fontSize === 'normal'
-                    ? 'bg-stone-800 border-stone-900 text-white font-bold'
-                    : 'bg-white border-stone-300 text-stone-700'
+                    ? 'bg-stone-800 border-stone-900 text-white font-bold shadow-xs'
+                    : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-50'
                 }`}
               >
-                <div className="text-xs truncate">ปกติ</div>
+                <div className="text-xs sm:text-sm font-bold leading-normal">ปกติ (A)</div>
               </button>
 
               <button
                 onClick={() => {
                   playTapSound();
                   onChangeFontSize('large');
+                  if (soundEnabled) speakThai('ปรับขนาดตัวหนังสือเป็นตัวโตแล้วครับ');
                 }}
-                className={`btn-tactile p-1.5 sm:p-2 rounded-xl border text-center transition-all cursor-pointer min-w-0 ${
+                className={`btn-tactile py-2.5 px-2 min-h-[44px] rounded-xl border text-center transition-all cursor-pointer min-w-0 ${
                   fontSize === 'large'
-                    ? 'bg-stone-800 border-stone-900 text-white font-bold'
-                    : 'bg-white border-stone-300 text-stone-700'
+                    ? 'bg-amber-600 border-amber-700 text-white font-bold shadow-xs'
+                    : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-50'
                 }`}
               >
-                <div className="text-xs truncate">ตัวโต</div>
+                <div className="text-xs sm:text-sm font-bold leading-normal">ตัวโต (A+)</div>
               </button>
 
               <button
                 onClick={() => {
                   playTapSound();
                   onChangeFontSize('huge');
+                  if (soundEnabled) speakThai('ปรับขนาดตัวหนังสือเป็นขนาดโตที่สุดแล้วครับ');
                 }}
-                className={`btn-tactile p-1.5 sm:p-2 rounded-xl border text-center transition-all cursor-pointer min-w-0 ${
+                className={`btn-tactile py-2.5 px-2 min-h-[44px] rounded-xl border text-center transition-all cursor-pointer min-w-0 ${
                   fontSize === 'huge'
-                    ? 'bg-stone-800 border-stone-900 text-white font-bold'
-                    : 'bg-white border-stone-300 text-stone-700'
+                    ? 'bg-amber-500 border-amber-600 text-white font-bold shadow-xs'
+                    : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-50'
                 }`}
               >
-                <div className="text-xs truncate">โตสุด</div>
+                <div className="text-xs sm:text-sm font-bold leading-normal">โตสุด (A++)</div>
               </button>
             </div>
           </div>

@@ -133,7 +133,7 @@ export default function ProfilePickerScreen({
 
                 {/* Right: Lock & Delete */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-stone-100 text-stone-600 text-[11px] font-semibold border border-stone-200">
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-stone-100 text-stone-600 text-xs font-semibold border border-stone-200">
                     <Lock className="w-3 h-3 text-stone-500" />
                     <span>ใส่รหัส</span>
                   </div>

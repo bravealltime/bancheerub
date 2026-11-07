@@ -137,21 +137,21 @@ export default function SummaryCard({
       {/* Income and Expense Grid */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {/* Income Box */}
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3.5 text-stone-900 border border-white/30 min-w-0 shadow-2xs">
-          <div className="text-stone-500 font-semibold text-[11px] sm:text-xs mb-0.5 truncate">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 text-stone-900 border border-white/30 min-w-0 shadow-2xs">
+          <div className="text-stone-500 font-semibold text-xs sm:text-sm mb-1 truncate leading-normal">
             เงินเข้า ({viewMode === 'today' ? 'วันนี้' : 'เดือนนี้'})
           </div>
-          <div className="text-[#059669] font-bold text-base sm:text-xl font-['Prompt'] break-all">
+          <div className="text-[#059669] font-bold text-base sm:text-xl font-['Prompt'] break-all leading-normal">
             +฿{formatCurrency(currentIncome)}
           </div>
         </div>
 
         {/* Expense Box */}
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3.5 text-stone-900 border border-white/30 min-w-0 shadow-2xs">
-          <div className="text-stone-500 font-semibold text-[11px] sm:text-xs mb-0.5 truncate">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 text-stone-900 border border-white/30 min-w-0 shadow-2xs">
+          <div className="text-stone-500 font-semibold text-xs sm:text-sm mb-1 truncate leading-normal">
             เงินออก ({viewMode === 'today' ? 'วันนี้' : 'เดือนนี้'})
           </div>
-          <div className="text-[#E11D48] font-bold text-base sm:text-xl font-['Prompt'] break-all">
+          <div className="text-[#E11D48] font-bold text-base sm:text-xl font-['Prompt'] break-all leading-normal">
             -฿{formatCurrency(currentExpense)}
           </div>
         </div>

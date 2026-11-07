@@ -165,6 +165,12 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('banchee_font_size', fontSize);
+    const scale = fontSize === 'huge' ? 1.36 : fontSize === 'large' ? 1.18 : 1.0;
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.fontSize = `${16 * scale}px`;
+      document.documentElement.setAttribute('data-font-size', fontSize);
+      document.documentElement.style.setProperty('--app-font-scale', String(scale));
+    }
   }, [fontSize]);
 
   useEffect(() => {
@@ -475,7 +481,7 @@ export default function App() {
   // IF NO ACTIVE BOOK SELECTED -> SHOW PROFILE PICKER SCREEN FIRST!
   if (!activeBookId) {
     return (
-      <div className={`min-h-screen w-full bg-[#F6F4EF] ${fontScaleClass}`}>
+      <div className={`min-h-screen w-full bg-[#F8F7F4] ${fontScaleClass}`}>
         <ProfilePickerScreen
           books={books}
           onSelectBookWithPin={(book) => setPinModalBook(book)}
@@ -509,7 +515,7 @@ export default function App() {
 
   // ONCE A BOOK IS SELECTED -> SHOW THAT PERSON'S CLEAN LEDGER!
   return (
-    <div className={`min-h-screen w-full bg-[#F6F4EF] text-[#2D2A26] flex flex-col overflow-x-hidden ${fontScaleClass}`}>
+    <div className={`min-h-screen w-full bg-[#F8F7F4] text-[#2D2A26] flex flex-col overflow-x-hidden ${fontScaleClass}`}>
       {/* Top Header with Switch Button */}
       <Header
         currentBook={currentBook}
@@ -552,7 +558,7 @@ export default function App() {
 
                 <button
                   onClick={() => setIsRemindersOpen(true)}
-                  className="text-[11px] font-bold text-stone-800 underline flex-shrink-0 cursor-pointer"
+                  className="text-xs sm:text-sm font-bold text-stone-800 underline flex-shrink-0 cursor-pointer"
                 >
                   ดูรายการเตือน
                 </button>

@@ -31,7 +31,7 @@ export default function AccountSwitcher({
             playTapSound();
             onOpenAccountManager();
           }}
-          className="text-[11px] font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-1 underline cursor-pointer"
+          className="text-xs font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-1 underline cursor-pointer"
         >
           <SlidersHorizontal className="w-3 h-3" />
           <span>จัดการบัญชี</span>
@@ -81,7 +81,7 @@ export default function AccountSwitcher({
                 <div className="text-xs font-bold leading-tight whitespace-nowrap truncate max-w-[120px]">
                   {acc.name}
                 </div>
-                <div className={`text-[10px] leading-tight font-medium font-['Prompt'] whitespace-nowrap ${
+                <div className={`text-xs leading-normal font-medium font-['Prompt'] whitespace-nowrap ${
                   isActive ? 'text-stone-300' : 'text-stone-500'
                 }`}>
                   ฿{formatCurrency(bal)}

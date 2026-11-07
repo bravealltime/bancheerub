@@ -16,8 +16,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Instant Root Font Scale to avoid layout flicker -->
+    <script>
+      (function() {
+        try {
+          var fs = localStorage.getItem('banchee_font_size') || 'normal';
+          var scale = fs === 'huge' ? 1.36 : (fs === 'large' ? 1.18 : 1.0);
+          document.documentElement.style.fontSize = (16 * scale) + 'px';
+          document.documentElement.setAttribute('data-font-size', fs);
+          document.documentElement.style.setProperty('--app-font-scale', String(scale));
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#F8F7F2] text-[#232323] selection:bg-amber-200">
+  <body class="bg-[#F8F7F4] text-[#2D2A26] selection:bg-amber-200">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

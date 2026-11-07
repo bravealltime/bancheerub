@@ -111,10 +111,10 @@ export default function TransactionList({
       {/* Title & Filter Bar (iOS Style Segmented Control) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3.5">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-tight">
+          <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-normal">
             ประวัติรายการ
           </h3>
-          <p className="text-[11px] sm:text-xs text-stone-500 font-normal">
+          <p className="text-xs sm:text-sm text-stone-500 font-normal leading-normal">
             ยอดเงินเข้า-ออก และเงินคงเหลือสะสม
           </p>
         </div>
@@ -126,39 +126,39 @@ export default function TransactionList({
               playTapSound();
               setFilterType('all');
             }}
-            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 min-h-[36px] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterType === 'all'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            ทั้งหมด <span className="opacity-60 font-normal text-[11px]">({totalCount})</span>
+            ทั้งหมด <span className="opacity-70 font-normal text-xs">({totalCount})</span>
           </button>
           <button
             onClick={() => {
               playTapSound();
               setFilterType('expense');
             }}
-            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 min-h-[36px] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterType === 'expense'
                 ? 'bg-[#E11D48] text-white shadow-xs'
                 : 'text-stone-600 hover:text-[#E11D48]'
             }`}
           >
-            รายจ่าย <span className="opacity-80 font-normal text-[11px]">({expenseCount})</span>
+            รายจ่าย <span className="opacity-80 font-normal text-xs">({expenseCount})</span>
           </button>
           <button
             onClick={() => {
               playTapSound();
               setFilterType('income');
             }}
-            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 min-h-[36px] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterType === 'income'
                 ? 'bg-[#059669] text-white shadow-xs'
                 : 'text-stone-600 hover:text-[#059669]'
             }`}
           >
-            รายรับ <span className="opacity-80 font-normal text-[11px]">({incomeCount})</span>
+            รายรับ <span className="opacity-80 font-normal text-xs">({incomeCount})</span>
           </button>
         </div>
       </div>
@@ -171,13 +171,13 @@ export default function TransactionList({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="ค้นหาตามหมวดหมู่ หรือข้อความ..."
-            className="w-full pl-9 pr-8 py-2 rounded-2xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-200 transition-all shadow-2xs"
+            className="w-full pl-9 pr-8 py-2 min-h-[40px] rounded-2xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-200 transition-all shadow-2xs"
           />
-          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-2 text-xs text-stone-400 hover:text-stone-700 font-semibold cursor-pointer"
+              className="absolute right-3 top-2.5 text-xs sm:text-sm text-stone-400 hover:text-stone-700 font-semibold cursor-pointer"
             >
               ล้าง
             </button>
@@ -189,7 +189,7 @@ export default function TransactionList({
       {sortedDates.length === 0 ? (
         <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-stone-200/70 shadow-xs my-3 space-y-2.5">
           <div className="text-4xl">📒✨</div>
-          <p className="text-base sm:text-lg font-bold text-stone-800">
+          <p className="text-base sm:text-lg font-bold text-stone-800 leading-normal">
             {searchQuery ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ยังไม่มีรายการในสมุดนี้'}
           </p>
           <p className="text-xs sm:text-sm text-stone-500 max-w-sm mx-auto leading-relaxed">
@@ -226,10 +226,10 @@ export default function TransactionList({
               <div key={dateStr} className="space-y-2">
                 {/* Modern Date Header */}
                 <div className="flex items-center justify-between px-2 pt-1 pb-0.5 text-stone-700">
-                  <span className="font-bold text-xs sm:text-sm text-stone-800 tracking-tight">
+                  <span className="font-bold text-xs sm:text-sm text-stone-800 tracking-tight leading-normal">
                     {formatThaiDateHeader(dateStr)}
                   </span>
-                  <div className="flex items-center gap-2 text-xs font-semibold">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
                     {dayIncome > 0 && (
                       <span className="text-[#059669] font-['Prompt'] font-bold">
                         +฿{formatCurrency(dayIncome)}
@@ -244,7 +244,7 @@ export default function TransactionList({
                 </div>
 
                 {/* Items List */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {sortedDateItems.map((tx) => {
                     const isExpense = tx.type === 'expense';
                     const accInfo = getAccountInfo(tx.accountId);
@@ -255,12 +255,12 @@ export default function TransactionList({
                         key={tx.id}
                         className="group relative bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-stone-200/70 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.07)] hover:border-stone-300 transition-all duration-200"
                       >
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-3">
                           {/* Left: Icon & Details */}
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                             {/* Category Squircle Icon */}
                             <div
-                              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-105 duration-200 ${
+                              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-105 duration-200 mt-0.5 sm:mt-0 ${
                                 isExpense
                                   ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-500/15'
                                   : 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/15'
@@ -272,13 +272,13 @@ export default function TransactionList({
                             {/* Info Column */}
                             <div className="min-w-0 flex-1">
                               {/* Category Name & Sleek Badge */}
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-base sm:text-[17px] font-bold text-stone-900 truncate tracking-tight">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-base sm:text-lg font-bold text-stone-900 tracking-tight leading-normal break-words">
                                   {tx.category}
                                 </h4>
 
                                 <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide flex-shrink-0 ${
+                                  className={`px-2 py-0.5 rounded-full text-xs font-bold tracking-wide flex-shrink-0 leading-normal ${
                                     isExpense
                                       ? 'bg-rose-100/70 text-rose-700'
                                       : 'bg-emerald-100/70 text-emerald-700'
@@ -293,7 +293,7 @@ export default function TransactionList({
                                       e.stopPropagation();
                                       handleSpeakItem(tx, runningBalance);
                                     }}
-                                    className="w-6 h-6 rounded-full text-stone-300 hover:text-stone-700 hover:bg-stone-100 flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors"
+                                    className="w-6 h-6 rounded-full text-stone-400 hover:text-stone-800 hover:bg-stone-100 flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors"
                                     title="แตะเพื่อฟังเสียง"
                                     aria-label="ฟังเสียง"
                                   >
@@ -302,15 +302,15 @@ export default function TransactionList({
                                 )}
                               </div>
 
-                              {/* Note (if available) */}
+                              {/* Note (if available) - No hard truncation */}
                               {tx.note && (
-                                <p className="text-xs sm:text-sm text-stone-500 font-normal mt-0.5 truncate">
+                                <p className="text-xs sm:text-sm text-stone-600 font-normal mt-0.5 break-words line-clamp-2 leading-relaxed">
                                   {tx.note}
                                 </p>
                               )}
 
                               {/* Meta: Time, Account, Slip Photo */}
-                              <div className="flex items-center gap-2 text-[11px] sm:text-xs text-stone-400 mt-1 font-medium flex-wrap">
+                              <div className="flex items-center gap-2 text-xs sm:text-sm text-stone-400 mt-1 font-medium flex-wrap leading-normal">
                                 {tx.time && <span>{tx.time} น.</span>}
                                 {tx.time && <span>•</span>}
                                 <span>{accInfo.icon} {accInfo.name}</span>
@@ -327,7 +327,7 @@ export default function TransactionList({
                                       }}
                                       className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 font-semibold cursor-pointer hover:underline"
                                     >
-                                      <Camera className="w-3 h-3" />
+                                      <Camera className="w-3.5 h-3.5" />
                                       <span>ดูสลิป</span>
                                     </button>
                                   </>
@@ -337,10 +337,10 @@ export default function TransactionList({
                           </div>
 
                           {/* Right: Amount, Running Balance & Actions */}
-                          <div className="flex flex-col items-end flex-shrink-0 text-right">
+                          <div className="flex flex-col items-end flex-shrink-0 text-right ml-auto">
                             {/* Transaction Amount */}
                             <span
-                              className={`text-lg sm:text-xl font-bold font-['Prompt'] tracking-tight ${
+                              className={`text-lg sm:text-xl lg:text-2xl font-bold font-['Prompt'] tracking-tight leading-normal ${
                                 isExpense ? 'text-[#E11D48]' : 'text-[#059669]'
                               }`}
                             >
@@ -348,7 +348,7 @@ export default function TransactionList({
                             </span>
 
                             {/* Running Balance */}
-                            <span className="text-xs sm:text-[13px] font-semibold text-stone-400 font-['Prompt'] mt-0.5">
+                            <span className="text-xs sm:text-sm font-semibold text-stone-500 font-['Prompt'] mt-0.5 leading-normal">
                               คงเหลือ {formatBaht(runningBalance ?? 0)}
                             </span>
 
@@ -360,11 +360,11 @@ export default function TransactionList({
                                   playTapSound();
                                   onEdit(tx);
                                 }}
-                                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors cursor-pointer"
+                                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors cursor-pointer"
                                 title="แก้ไขรายการนี้"
                                 aria-label="แก้ไข"
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
+                                <Edit3 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -372,11 +372,11 @@ export default function TransactionList({
                                   playTapSound();
                                   setItemToDelete(tx);
                                 }}
-                                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
                                 title="ลบรายการนี้"
                                 aria-label="ลบ"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
@@ -398,7 +398,7 @@ export default function TransactionList({
             <div className="w-12 h-12 rounded-full bg-rose-50 text-[#E11D48] flex items-center justify-center mx-auto text-xl ring-1 ring-rose-200">
               ⚠️
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-stone-900">
+            <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-normal">
               ยืนยันการลบรายการ
             </h3>
             <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
@@ -407,13 +407,13 @@ export default function TransactionList({
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={() => setItemToDelete(null)}
-                className="btn-tactile flex-1 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs sm:text-sm cursor-pointer"
+                className="btn-tactile flex-1 py-2.5 min-h-[42px] rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs sm:text-sm cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={confirmDelete}
-                className="btn-tactile flex-1 py-2.5 rounded-2xl bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold text-xs sm:text-sm shadow-xs cursor-pointer"
+                className="btn-tactile flex-1 py-2.5 min-h-[42px] rounded-2xl bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold text-xs sm:text-sm shadow-xs cursor-pointer"
               >
                 ยืนยันลบ
               </button>

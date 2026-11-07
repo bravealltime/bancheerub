@@ -180,7 +180,7 @@ export default function CategoryManagerModal({
               />
 
               <div>
-                <label className="block text-[11px] font-medium text-stone-600 mb-1">เลือกรูปไอคอน:</label>
+                <label className="block text-xs font-medium text-stone-600 mb-1">เลือกรูปไอคอน:</label>
                 <div className="flex gap-1.5 flex-wrap max-h-24 overflow-y-auto p-1 bg-white rounded-lg border border-stone-200">
                   {AVAILABLE_EMOJIS.map(emoji => (
                     <button

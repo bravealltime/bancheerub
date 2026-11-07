@@ -164,7 +164,7 @@ export default function PinEntryModal({
         </div>
 
         {/* Admin and PIN Hint Drawer */}
-        <div className="pt-1 text-[11px] text-stone-400 border-t border-stone-100 space-y-1">
+        <div className="pt-1 text-xs text-stone-500 border-t border-stone-100 space-y-1">
           <button
             onClick={() => setShowHint(!showHint)}
             className="text-stone-500 underline font-medium cursor-pointer"

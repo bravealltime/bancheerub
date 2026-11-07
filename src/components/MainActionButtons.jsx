@@ -11,18 +11,18 @@ export default function MainActionButtons({ onOpenExpense, onOpenIncome }) {
           playTapSound();
           onOpenExpense();
         }}
-        className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#E11D48] to-[#BE123C] hover:from-[#BE123C] hover:to-[#9F1239] text-white p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-rose-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
+        className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#E11D48] to-[#BE123C] hover:from-[#BE123C] hover:to-[#9F1239] text-white p-3.5 sm:p-4 min-h-[76px] rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-rose-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
         aria-label="บันทึกรายจ่าย"
       >
         <div className="flex items-center justify-center gap-2 mb-1 max-w-full">
           <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
             <Minus className="w-3.5 h-3.5 stroke-[3]" />
           </div>
-          <span className="text-base sm:text-lg font-bold truncate tracking-tight">
+          <span className="text-base sm:text-lg font-bold tracking-tight leading-normal">
             จดรายจ่าย
           </span>
         </div>
-        <span className="text-[11px] sm:text-xs text-white/80 font-normal line-clamp-1">
+        <span className="text-xs sm:text-sm text-white/85 font-normal leading-normal text-wrap-safe">
           กับข้าว, ค่ายา, ของใช้
         </span>
       </button>
@@ -33,18 +33,18 @@ export default function MainActionButtons({ onOpenExpense, onOpenIncome }) {
           playTapSound();
           onOpenIncome();
         }}
-        className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065F46] text-white p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-emerald-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
+        className="btn-tactile group relative overflow-hidden bg-gradient-to-br from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065F46] text-white p-3.5 sm:p-4 min-h-[76px] rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md border border-emerald-400/20 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-w-0"
         aria-label="บันทึกรายรับ"
       >
         <div className="flex items-center justify-center gap-2 mb-1 max-w-full">
           <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
           </div>
-          <span className="text-base sm:text-lg font-bold truncate tracking-tight">
+          <span className="text-base sm:text-lg font-bold tracking-tight leading-normal">
             จดรายรับ
           </span>
         </div>
-        <span className="text-[11px] sm:text-xs text-white/80 font-normal line-clamp-1">
+        <span className="text-xs sm:text-sm text-white/85 font-normal leading-normal text-wrap-safe">
           ลูกให้, บำนาญ, ค้าขาย
         </span>
       </button>
