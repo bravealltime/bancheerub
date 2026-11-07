@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Trash2, Edit3, Volume2, Search, Camera, X, ArrowDownRight, ArrowUpRight, BookOpen } from 'lucide-react';
-import { formatThaiDateHeader, formatCurrency } from '../utils/thaiDate';
+import { Trash2, Edit3, Volume2, Search, Camera, X } from 'lucide-react';
+import { formatThaiDateHeader, formatCurrency, formatBaht } from '../utils/thaiDate';
 import { playTapSound, playDeleteSound, speakThai } from '../utils/audio';
 
 export default function TransactionList({
@@ -9,7 +9,7 @@ export default function TransactionList({
   onDelete,
   soundEnabled,
   accounts = [],
-  activeAccountId = 'all'
+  activeAccountId: _activeAccountId = 'all'
 }) {
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,12 +19,21 @@ export default function TransactionList({
   // 1. Compute chronological running balance across ALL transactions in the book (oldest to newest)
   const runningBalanceMap = useMemo(() => {
     const sorted = [...transactions].sort((a, b) => {
+      // Date ascending
       const dateCmp = (a.date || '').localeCompare(b.date || '');
       if (dateCmp !== 0) return dateCmp;
-      if (a.time && b.time) {
-        const timeCmp = a.time.localeCompare(b.time);
-        if (timeCmp !== 0) return timeCmp;
+
+      // Time ascending if specified and different
+      if (a.time && b.time && a.time !== b.time) {
+        return a.time.localeCompare(b.time);
       }
+
+      // On same date/time, income naturally comes BEFORE expense (funds exist before spending)
+      if (a.type !== b.type) {
+        return a.type === 'income' ? -1 : 1;
+      }
+
+      // Fallback to createdAt ascending
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
 
@@ -99,81 +108,76 @@ export default function TransactionList({
 
   return (
     <div className="mt-4 sm:mt-5 w-full">
-      {/* Title & Filter Tabs */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
-            <BookOpen className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-tight">
-              ประวัติรายการบันทึก
-            </h3>
-            <p className="text-[11px] sm:text-xs text-stone-500">
-              แสดงเงินเข้า-ออก พร้อมยอดคงเหลือสะสมทุกรายการ
-            </p>
-          </div>
+      {/* Title & Filter Bar (iOS Style Segmented Control) */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3.5">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-tight">
+            ประวัติรายการ
+          </h3>
+          <p className="text-[11px] sm:text-xs text-stone-500 font-normal">
+            ยอดเงินเข้า-ออก และเงินคงเหลือสะสม
+          </p>
         </div>
 
-        {/* Filter Pills */}
-        <div className="grid grid-cols-3 bg-[#EBE7DF] p-1 rounded-xl gap-1 w-full sm:w-auto">
+        {/* Segmented Filter Pills */}
+        <div className="flex items-center bg-stone-200/70 p-1 rounded-2xl w-full sm:w-auto shadow-2xs">
           <button
             onClick={() => {
               playTapSound();
               setFilterType('all');
             }}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer truncate ${
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterType === 'all'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            ทั้งหมด ({totalCount})
+            ทั้งหมด <span className="opacity-60 font-normal text-[11px]">({totalCount})</span>
           </button>
           <button
             onClick={() => {
               playTapSound();
               setFilterType('expense');
             }}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer truncate ${
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterType === 'expense'
-                ? 'bg-[#BA3C2A] text-white shadow-xs'
-                : 'text-stone-600 hover:text-[#BA3C2A]'
+                ? 'bg-[#E11D48] text-white shadow-xs'
+                : 'text-stone-600 hover:text-[#E11D48]'
             }`}
           >
-            รายจ่าย ({expenseCount})
+            รายจ่าย <span className="opacity-80 font-normal text-[11px]">({expenseCount})</span>
           </button>
           <button
             onClick={() => {
               playTapSound();
               setFilterType('income');
             }}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer truncate ${
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterType === 'income'
-                ? 'bg-[#2D6A4F] text-white shadow-xs'
-                : 'text-stone-600 hover:text-[#2D6A4F]'
+                ? 'bg-[#059669] text-white shadow-xs'
+                : 'text-stone-600 hover:text-[#059669]'
             }`}
           >
-            รายรับ ({incomeCount})
+            รายรับ <span className="opacity-80 font-normal text-[11px]">({incomeCount})</span>
           </button>
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search Bar */}
       {transactions.length > 5 && (
-        <div className="relative mb-3 w-full">
+        <div className="relative mb-3.5 w-full">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ค้นหาตามหมวดหมู่ หรือข้อความหมายเหตุ..."
-            className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-stone-300 text-xs sm:text-sm focus:outline-none focus:border-stone-500 shadow-2xs"
+            placeholder="ค้นหาตามหมวดหมู่ หรือข้อความ..."
+            className="w-full pl-9 pr-8 py-2 rounded-2xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-200 transition-all shadow-2xs"
           />
           <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-2 text-xs text-stone-400 hover:text-stone-600 font-medium cursor-pointer"
+              className="absolute right-3 top-2 text-xs text-stone-400 hover:text-stone-700 font-semibold cursor-pointer"
             >
               ล้าง
             </button>
@@ -183,31 +187,34 @@ export default function TransactionList({
 
       {/* Items Grouped by Date */}
       {sortedDates.length === 0 ? (
-        <div className="bg-white rounded-2xl p-6 sm:p-8 text-center border border-stone-200 shadow-xs my-3 space-y-2">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-stone-200/70 shadow-xs my-3 space-y-2.5">
           <div className="text-4xl">📒✨</div>
           <p className="text-base sm:text-lg font-bold text-stone-800">
             {searchQuery ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ยังไม่มีรายการในสมุดนี้'}
           </p>
-          <p className="text-xs sm:text-sm text-stone-500 max-w-sm mx-auto">
+          <p className="text-xs sm:text-sm text-stone-500 max-w-sm mx-auto leading-relaxed">
             {searchQuery
               ? 'ลองค้นหาด้วยคำอื่น หรือกด "ล้าง" เพื่อดูรายการทั้งหมด'
               : 'แตะปุ่มสีแดงเพื่อ "จดรายจ่าย" หรือปุ่มสีเขียวเพื่อ "จดรายรับ" ด้านบนเพื่อเริ่มบันทึกได้เลยครับ'}
           </p>
         </div>
       ) : (
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-4">
           {sortedDates.map((dateStr) => {
             const dateItems = groupedByDate[dateStr];
 
-            // Sort items within the day newest first
+            // Sort items within the day: newest activity on top
             const sortedDateItems = [...dateItems].sort((a, b) => {
-              if (a.time && b.time) {
-                const timeCmp = b.time.localeCompare(a.time);
-                if (timeCmp !== 0) return timeCmp;
+              if (a.time && b.time && a.time !== b.time) {
+                return b.time.localeCompare(a.time);
+              }
+              // On same date/time, expenses on top (latest outgoing activity)
+              if (a.type !== b.type) {
+                return a.type === 'expense' ? -1 : 1;
               }
               return (b.createdAt || 0) - (a.createdAt || 0);
             });
-            
+
             const dayIncome = dateItems
               .filter(t => t.type === 'income')
               .reduce((sum, t) => sum + Number(t.amount || 0), 0);
@@ -217,19 +224,19 @@ export default function TransactionList({
 
             return (
               <div key={dateStr} className="space-y-2">
-                {/* Date Header with Daily Subtotals */}
-                <div className="flex flex-wrap items-center justify-between gap-2 bg-[#EAE7DF] border border-stone-300/80 px-3.5 py-1.5 rounded-xl text-stone-800 shadow-2xs">
-                  <span className="font-bold text-xs sm:text-sm truncate">
-                    📅 {formatThaiDateHeader(dateStr)}
+                {/* Modern Date Header */}
+                <div className="flex items-center justify-between px-2 pt-1 pb-0.5 text-stone-700">
+                  <span className="font-bold text-xs sm:text-sm text-stone-800 tracking-tight">
+                    {formatThaiDateHeader(dateStr)}
                   </span>
-                  <div className="flex items-center gap-2 text-xs font-bold flex-shrink-0">
+                  <div className="flex items-center gap-2 text-xs font-semibold">
                     {dayIncome > 0 && (
-                      <span className="text-[#2D6A4F] bg-white/70 px-2 py-0.5 rounded-md border border-[#2D6A4F]/20">
+                      <span className="text-[#059669] font-['Prompt'] font-bold">
                         +฿{formatCurrency(dayIncome)}
                       </span>
                     )}
                     {dayExpense > 0 && (
-                      <span className="text-[#BA3C2A] bg-white/70 px-2 py-0.5 rounded-md border border-[#BA3C2A]/20">
+                      <span className="text-[#E11D48] font-['Prompt'] font-bold">
                         -฿{formatCurrency(dayExpense)}
                       </span>
                     )}
@@ -246,55 +253,47 @@ export default function TransactionList({
                     return (
                       <div
                         key={tx.id}
-                        className={`bg-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 border transition-all shadow-xs hover:shadow-sm ${
-                          isExpense
-                            ? 'border-rose-200/80 hover:border-rose-400 border-l-[6px] border-l-[#BA3C2A]'
-                            : 'border-emerald-200/80 hover:border-emerald-400 border-l-[6px] border-l-[#2D6A4F]'
-                        }`}
+                        className="group relative bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-stone-200/70 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.07)] hover:border-stone-300 transition-all duration-200"
                       >
-                        {/* Main Flex Row */}
-                        <div className="flex items-start justify-between gap-2.5 sm:gap-3">
-                          {/* Left: Icon & Description */}
-                          <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
-                            {/* Category Emoji Icon Box */}
-                            <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 shadow-2xs ${
-                              isExpense
-                                ? 'bg-rose-50 text-[#BA3C2A] border border-rose-200/60'
-                                : 'bg-emerald-50 text-[#2D6A4F] border border-emerald-200/60'
-                            }`}>
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Left: Icon & Details */}
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* Category Squircle Icon */}
+                            <div
+                              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-105 duration-200 ${
+                                isExpense
+                                  ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-500/15'
+                                  : 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/15'
+                              }`}
+                            >
                               {tx.categoryIcon || (isExpense ? '🛒' : '💰')}
                             </div>
 
-                            {/* Info Block */}
+                            {/* Info Column */}
                             <div className="min-w-0 flex-1">
-                              {/* Category Name & Type Tag */}
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <span className={`px-2 py-0.5 rounded-md text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 flex-shrink-0 ${
-                                  isExpense
-                                    ? 'bg-rose-100 text-[#BA3C2A]'
-                                    : 'bg-emerald-100 text-[#2D6A4F]'
-                                }`}>
-                                  {isExpense ? (
-                                    <>
-                                      <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
-                                      <span>รายจ่าย</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
-                                      <span>รายรับ</span>
-                                    </>
-                                  )}
-                                </span>
-
-                                <h4 className="text-sm sm:text-base font-bold text-stone-900 truncate">
+                              {/* Category Name & Sleek Badge */}
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-base sm:text-[17px] font-bold text-stone-900 truncate tracking-tight">
                                   {tx.category}
                                 </h4>
 
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide flex-shrink-0 ${
+                                    isExpense
+                                      ? 'bg-rose-100/70 text-rose-700'
+                                      : 'bg-emerald-100/70 text-emerald-700'
+                                  }`}
+                                >
+                                  {isExpense ? 'รายจ่าย' : 'รายรับ'}
+                                </span>
+
                                 {soundEnabled && (
                                   <button
-                                    onClick={() => handleSpeakItem(tx, runningBalance)}
-                                    className="text-stone-400 hover:text-stone-800 p-1 rounded-md hover:bg-stone-100 cursor-pointer flex-shrink-0 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSpeakItem(tx, runningBalance);
+                                    }}
+                                    className="w-6 h-6 rounded-full text-stone-300 hover:text-stone-700 hover:bg-stone-100 flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors"
                                     title="แตะเพื่อฟังเสียง"
                                     aria-label="ฟังเสียง"
                                   >
@@ -303,90 +302,77 @@ export default function TransactionList({
                                 )}
                               </div>
 
-                              {/* Note (if present) */}
+                              {/* Note (if available) */}
                               {tx.note && (
-                                <p className="text-xs sm:text-sm text-stone-600 font-medium mt-1 break-words">
+                                <p className="text-xs sm:text-sm text-stone-500 font-normal mt-0.5 truncate">
                                   {tx.note}
                                 </p>
                               )}
 
                               {/* Meta: Time, Account, Slip Photo */}
-                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-stone-500 mt-1.5">
-                                {tx.time && (
-                                  <span className="font-medium text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded">
-                                    🕒 {tx.time} น.
-                                  </span>
-                                )}
+                              <div className="flex items-center gap-2 text-[11px] sm:text-xs text-stone-400 mt-1 font-medium flex-wrap">
+                                {tx.time && <span>{tx.time} น.</span>}
+                                {tx.time && <span>•</span>}
+                                <span>{accInfo.icon} {accInfo.name}</span>
 
-                                {/* Account badge if viewing all accounts */}
-                                {activeAccountId === 'all' && (
-                                  <span className="px-1.5 py-0.5 rounded bg-stone-100 border border-stone-200 text-stone-600 font-medium">
-                                    {accInfo.icon} {accInfo.name}
-                                  </span>
-                                )}
-
-                                {/* Photo Slip / Receipt Badge */}
                                 {tx.image && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      playTapSound();
-                                      setViewingImage(tx.image);
-                                    }}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold cursor-pointer transition-colors shadow-2xs"
-                                    title="แตะเพื่อดูรูปภาพสลิป/ใบเสร็จ"
-                                  >
-                                    <Camera className="w-3.5 h-3.5 text-amber-700" />
-                                    <span>ดูรูปสลิป</span>
-                                  </button>
+                                  <>
+                                    <span>•</span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        playTapSound();
+                                        setViewingImage(tx.image);
+                                      }}
+                                      className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 font-semibold cursor-pointer hover:underline"
+                                    >
+                                      <Camera className="w-3 h-3" />
+                                      <span>ดูสลิป</span>
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </div>
                           </div>
 
-                          {/* Right: Amount & Running Balance */}
-                          <div className="flex flex-col items-end flex-shrink-0 text-right min-w-[110px] sm:min-w-[130px]">
+                          {/* Right: Amount, Running Balance & Actions */}
+                          <div className="flex flex-col items-end flex-shrink-0 text-right">
                             {/* Transaction Amount */}
-                            <span className={`text-base sm:text-lg lg:text-xl font-bold font-['Prompt'] whitespace-nowrap tracking-tight ${
-                              isExpense ? 'text-[#BA3C2A]' : 'text-[#2D6A4F]'
-                            }`}>
+                            <span
+                              className={`text-lg sm:text-xl font-bold font-['Prompt'] tracking-tight ${
+                                isExpense ? 'text-[#E11D48]' : 'text-[#059669]'
+                              }`}
+                            >
                               {isExpense ? '- ' : '+ '}฿{formatCurrency(tx.amount)}
                             </span>
 
-                            {/* Running Balance Badge (เหมือนสมุดธนาคาร) */}
-                            <div
-                              className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] sm:text-xs font-semibold whitespace-nowrap shadow-2xs ${
-                                (runningBalance ?? 0) >= 0
-                                  ? 'bg-stone-50 text-stone-700 border-stone-300/80'
-                                  : 'bg-rose-50 text-rose-800 border-rose-200'
-                              }`}
-                              title="ยอดคงเหลือสะสมสุทธิหลังทำรายการนี้"
-                            >
-                              <span className="text-stone-500 font-normal">คงเหลือ:</span>
-                              <span className="font-bold font-['Prompt']">
-                                ฿{formatCurrency(runningBalance ?? 0)}
-                              </span>
-                            </div>
+                            {/* Running Balance */}
+                            <span className="text-xs sm:text-[13px] font-semibold text-stone-400 font-['Prompt'] mt-0.5">
+                              คงเหลือ {formatBaht(runningBalance ?? 0)}
+                            </span>
 
-                            {/* Actions: Edit & Delete Buttons */}
-                            <div className="flex items-center gap-1.5 mt-2">
+                            {/* Tactile Circular Actions */}
+                            <div className="flex items-center gap-1.5 mt-2 opacity-80 group-hover:opacity-100 transition-opacity">
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   playTapSound();
                                   onEdit(tx);
                                 }}
-                                className="btn-tactile p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 border border-stone-200 cursor-pointer transition-colors"
+                                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors cursor-pointer"
                                 title="แก้ไขรายการนี้"
                                 aria-label="แก้ไข"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   playTapSound();
                                   setItemToDelete(tx);
                                 }}
-                                className="btn-tactile p-1.5 rounded-lg bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-600 border border-stone-200 cursor-pointer transition-colors"
+                                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
                                 title="ลบรายการนี้"
                                 aria-label="ลบ"
                               >
@@ -407,27 +393,27 @@ export default function TransactionList({
 
       {/* Confirmation Modal for Deletion */}
       {itemToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade">
-          <div className="bg-white rounded-2xl p-5 max-w-sm w-full border border-stone-300 shadow-2xl text-center space-y-3.5">
-            <div className="w-12 h-12 rounded-full bg-rose-100 text-[#BA3C2A] flex items-center justify-center mx-auto text-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-2xs p-4 animate-fade">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-2xl text-center space-y-3.5">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-[#E11D48] flex items-center justify-center mx-auto text-xl ring-1 ring-rose-200">
               ⚠️
             </div>
             <h3 className="text-base sm:text-lg font-bold text-stone-900">
               ยืนยันการลบรายการ
             </h3>
-            <p className="text-stone-600 text-xs sm:text-sm">
+            <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
               ต้องการลบรายการ "{itemToDelete.category}" ยอด ฿{formatCurrency(itemToDelete.amount)} ใช่ไหมครับ?
             </p>
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={() => setItemToDelete(null)}
-                className="btn-tactile flex-1 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs sm:text-sm cursor-pointer"
+                className="btn-tactile flex-1 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs sm:text-sm cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={confirmDelete}
-                className="btn-tactile flex-1 py-2.5 rounded-xl bg-[#BA3C2A] hover:bg-[#a33424] text-white font-bold text-xs sm:text-sm shadow-xs cursor-pointer"
+                className="btn-tactile flex-1 py-2.5 rounded-2xl bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold text-xs sm:text-sm shadow-xs cursor-pointer"
               >
                 ยืนยันลบ
               </button>
@@ -439,16 +425,16 @@ export default function TransactionList({
       {/* Full-Screen Receipt / Slip Viewer Modal */}
       {viewingImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-3 sm:p-4 animate-fade no-print"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-3 sm:p-4 animate-fade no-print"
           onClick={() => setViewingImage(null)}
         >
           <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col items-center">
             <button
               onClick={() => setViewingImage(null)}
-              className="absolute -top-11 right-0 text-white p-1.5 rounded-full bg-white/20 hover:bg-white/30 cursor-pointer"
+              className="absolute -top-11 right-0 text-white p-2 rounded-full bg-white/20 hover:bg-white/30 cursor-pointer"
               aria-label="ปิดรูปภาพ"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
             <img
               src={viewingImage}

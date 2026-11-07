@@ -34,7 +34,7 @@ export default function Header({
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 w-full no-print">
+    <header className="bg-white/95 backdrop-blur-md border-b border-stone-200/70 sticky top-0 z-30 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 w-full no-print">
       <div className="max-w-5xl xl:max-w-6xl mx-auto flex items-center justify-between gap-2">
         {/* Left: Switch Back Button & Current Book Name */}
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
@@ -43,20 +43,20 @@ export default function Header({
               playTapSound();
               onSwitchBook();
             }}
-            className="btn-tactile flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold border border-stone-300 flex-shrink-0 cursor-pointer"
+            className="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-stone-100/90 hover:bg-stone-200 text-stone-700 text-xs font-bold border border-stone-200 flex-shrink-0 cursor-pointer transition-colors"
             title="กดเพื่อกลับไปเลือกสมุดของคนอื่น"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">สลับคน</span>
           </button>
 
-          <div className="flex items-center gap-1.5 min-w-0 flex-1">
-            <span className="text-xl flex-shrink-0">{currentBook?.icon || '📒'}</span>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-2xl flex-shrink-0">{currentBook?.icon || '📒'}</span>
             <div className="min-w-0">
               <h1 className="text-sm sm:text-base font-bold text-stone-900 leading-tight truncate">
                 สมุดของ {currentBook?.name || 'ครอบครัว'}
               </h1>
-              <p className="text-[11px] text-stone-500 truncate">
+              <p className="text-[11px] text-stone-400 truncate">
                 แตะ "สลับคน" เพื่อเปลี่ยนสมุด
               </p>
             </div>
@@ -71,7 +71,7 @@ export default function Header({
             target="_top"
             rel="noopener noreferrer"
             title="กลับไปที่ HomeSpace บ้านของเรา"
-            className="btn-tactile flex items-center gap-1 px-2.5 h-9 sm:h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-xs sm:text-sm cursor-pointer transition-colors"
+            className="btn-tactile flex items-center gap-1.5 px-3 h-9 sm:h-10 rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs sm:text-sm cursor-pointer transition-colors"
           >
             <span className="text-base">🏡</span>
             <span className="hidden sm:inline">HomeSpace</span>
@@ -87,10 +87,10 @@ export default function Header({
               cloudStatus === 'synced' ? 'ซิงก์กับ Cloud ของบ้านเรียบร้อยแล้ว (แตะเพื่อรีเฟรช)' :
               cloudStatus === 'syncing' ? 'กำลังซิงก์ข้อมูลกับ Cloud...' : 'ออฟไลน์: บันทึกข้อมูลในเครื่องเรียบร้อย (จะซิงก์เมื่อต่อเน็ต)'
             }
-            className={`btn-tactile flex items-center gap-1 px-2 h-9 sm:h-10 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
-              cloudStatus === 'synced' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' :
-              cloudStatus === 'syncing' ? 'bg-blue-50 border-blue-300 text-blue-800 animate-pulse' :
-              'bg-amber-50 border-amber-300 text-amber-800'
+            className={`btn-tactile flex items-center gap-1.5 px-2.5 h-9 sm:h-10 rounded-2xl border text-xs font-bold cursor-pointer transition-colors ${
+              cloudStatus === 'synced' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+              cloudStatus === 'syncing' ? 'bg-blue-50 border-blue-200 text-blue-800 animate-pulse' :
+              'bg-amber-50 border-amber-200 text-amber-800'
             }`}
           >
             <Cloud className="w-4 h-4 stroke-[2]" />
@@ -106,9 +106,9 @@ export default function Header({
               onToggleSound();
             }}
             title={soundEnabled ? 'เปิดเสียงอ่านอยู่ (แตะเพื่อปิด)' : 'ปิดเสียงอยู่ (แตะเพื่อเปิด)'}
-            className={`btn-tactile flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border transition-all cursor-pointer ${
+            className={`btn-tactile flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-2xl border transition-all cursor-pointer ${
               soundEnabled
-                ? 'bg-stone-100 border-stone-300 text-stone-800'
+                ? 'bg-stone-100/90 border-stone-200 text-stone-800 shadow-2xs'
                 : 'bg-white border-stone-200 text-stone-400'
             }`}
             aria-label="สลับเสียงพูด"
@@ -120,7 +120,7 @@ export default function Header({
           <button
             onClick={cycleFontSize}
             title="เปลี่ยนขนาดตัวหนังสือ"
-            className="btn-tactile flex items-center justify-center gap-0.5 px-2 h-9 sm:h-10 rounded-xl bg-stone-100 border border-stone-300 text-stone-800 font-bold text-xs sm:text-sm cursor-pointer"
+            className="btn-tactile flex items-center justify-center gap-0.5 px-2.5 h-9 sm:h-10 rounded-2xl bg-stone-100/90 border border-stone-200 text-stone-800 font-bold text-xs sm:text-sm cursor-pointer"
             aria-label="เปลี่ยนขนาดตัวอักษร"
           >
             <Type className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -134,7 +134,7 @@ export default function Header({
               onOpenSettings();
             }}
             title="ตั้งค่าเพิ่มเติม"
-            className="btn-tactile flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-stone-100 border border-stone-300 text-stone-700 hover:bg-stone-200 transition-colors cursor-pointer"
+            className="btn-tactile flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-stone-100/90 border border-stone-200 text-stone-700 hover:bg-stone-200 transition-colors cursor-pointer"
             aria-label="เปิดหน้าตั้งค่า"
           >
             <Settings className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2]" />

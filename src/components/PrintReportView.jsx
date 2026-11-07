@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { formatCurrency, formatThaiMonth, formatThaiDateFull, getTodayString } from '../utils/thaiDate';
+import { formatCurrency, formatBaht, formatThaiMonth, formatThaiDateFull, getTodayString } from '../utils/thaiDate';
 
 export default function PrintReportView({
   selectedMonth,
@@ -13,7 +13,8 @@ export default function PrintReportView({
     const sorted = [...transactions].sort((a, b) => {
       const dateCmp = (a.date || '').localeCompare(b.date || '');
       if (dateCmp !== 0) return dateCmp;
-      if (a.time && b.time) return a.time.localeCompare(b.time);
+      if (a.time && b.time && a.time !== b.time) return a.time.localeCompare(b.time);
+      if (a.type !== b.type) return a.type === 'income' ? -1 : 1;
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
 
@@ -101,7 +102,7 @@ export default function PrintReportView({
                   {tx.type === 'expense' ? '-' : '+'}฿{formatCurrency(tx.amount)}
                 </td>
                 <td className="p-2 text-right font-bold whitespace-nowrap">
-                  ฿{formatCurrency(runningBalanceMap[tx.id] ?? 0)}
+                  {formatBaht(runningBalanceMap[tx.id] ?? 0)}
                 </td>
               </tr>
             ))

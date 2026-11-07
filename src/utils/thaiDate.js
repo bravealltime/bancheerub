@@ -76,3 +76,12 @@ export function formatCurrency(amount) {
   const num = Number(amount) || 0;
   return num.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
+
+export function formatBaht(amount, prefix = '') {
+  const num = Number(amount) || 0;
+  const isNegative = num < 0;
+  const absFormatted = Math.abs(num).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  if (isNegative) return `-฿${absFormatted}`;
+  if (prefix) return `${prefix}฿${absFormatted}`;
+  return `฿${absFormatted}`;
+}
