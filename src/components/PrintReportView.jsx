@@ -1,20 +1,43 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatCurrency, formatThaiMonth, formatThaiDateFull, getTodayString } from '../utils/thaiDate';
 
 export default function PrintReportView({
   selectedMonth,
   userName,
-  transactions
+  transactions = []
 }) {
-  const monthTransactions = transactions.filter(t => t.date.startsWith(selectedMonth));
+  const monthTransactions = transactions.filter(t => (t.date || '').startsWith(selectedMonth));
+
+  // Compute running balance chronologically across all transactions
+  const runningBalanceMap = useMemo(() => {
+    const sorted = [...transactions].sort((a, b) => {
+      const dateCmp = (a.date || '').localeCompare(b.date || '');
+      if (dateCmp !== 0) return dateCmp;
+      if (a.time && b.time) return a.time.localeCompare(b.time);
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+
+    let running = 0;
+    const map = {};
+    for (const tx of sorted) {
+      const amt = Number(tx.amount) || 0;
+      if (tx.type === 'income') {
+        running += amt;
+      } else {
+        running -= amt;
+      }
+      map[tx.id] = running;
+    }
+    return map;
+  }, [transactions]);
 
   const totalIncome = monthTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   const totalExpense = monthTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   const netSavings = totalIncome - totalExpense;
   const printedDate = formatThaiDateFull(getTodayString());
@@ -33,11 +56,11 @@ export default function PrintReportView({
       <div className="grid grid-cols-3 border border-black mb-6 text-center text-sm">
         <div className="p-3 border-r border-black">
           <div className="text-xs">เงินเข้ารวม (รายรับ)</div>
-          <div className="text-lg font-bold mt-1">+฿{formatCurrency(totalIncome)} บาท</div>
+          <div className="text-lg font-bold mt-1 text-[#2D6A4F]">+฿{formatCurrency(totalIncome)} บาท</div>
         </div>
         <div className="p-3 border-r border-black">
           <div className="text-xs">เงินออกรวม (รายจ่าย)</div>
-          <div className="text-lg font-bold mt-1">-฿{formatCurrency(totalExpense)} บาท</div>
+          <div className="text-lg font-bold mt-1 text-[#BA3C2A]">-฿{formatCurrency(totalExpense)} บาท</div>
         </div>
         <div className="p-3">
           <div className="text-xs">เงินคงเหลือสุทธิ</div>
@@ -56,13 +79,14 @@ export default function PrintReportView({
             <th className="p-2 border-r border-black">หมวดหมู่</th>
             <th className="p-2 border-r border-black">รายละเอียด / หมายเหตุ</th>
             <th className="p-2 border-r border-black w-20 text-center">ประเภท</th>
-            <th className="p-2 text-right w-28">จำนวนเงิน (บาท)</th>
+            <th className="p-2 border-r border-black text-right w-28">จำนวนเงิน (บาท)</th>
+            <th className="p-2 text-right w-28">ยอดคงเหลือ (บาท)</th>
           </tr>
         </thead>
         <tbody>
           {monthTransactions.length === 0 ? (
             <tr>
-              <td colSpan={5} className="p-4 text-center">ไม่มีรายการในเดือนนี้</td>
+              <td colSpan={6} className="p-4 text-center">ไม่มีรายการในเดือนนี้</td>
             </tr>
           ) : (
             monthTransactions.map((tx) => (
@@ -70,11 +94,14 @@ export default function PrintReportView({
                 <td className="p-2 border-r border-black whitespace-nowrap">{tx.date}</td>
                 <td className="p-2 border-r border-black font-semibold">{tx.category}</td>
                 <td className="p-2 border-r border-black">{tx.note || '-'}</td>
-                <td className="p-2 border-r border-black text-center">
+                <td className="p-2 border-r border-black text-center font-bold">
                   {tx.type === 'income' ? 'รายรับ' : 'รายจ่าย'}
                 </td>
-                <td className="p-2 text-right font-bold whitespace-nowrap">
+                <td className="p-2 border-r border-black text-right font-bold whitespace-nowrap">
                   {tx.type === 'expense' ? '-' : '+'}฿{formatCurrency(tx.amount)}
+                </td>
+                <td className="p-2 text-right font-bold whitespace-nowrap">
+                  ฿{formatCurrency(runningBalanceMap[tx.id] ?? 0)}
                 </td>
               </tr>
             ))
