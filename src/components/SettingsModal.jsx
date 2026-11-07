@@ -22,7 +22,10 @@ export default function SettingsModal({
   onResetData,
   onOpenCategoryManager,
   onOpenTutorial,
-  onSwitchBook
+  onSwitchBook,
+  cloudStatus = 'synced',
+  lastSyncTime,
+  onForceSync
 }) {
   const [nameInput, setNameInput] = useState(userName || 'คุณตา');
   const [phoneInput, setPhoneInput] = useState(emergencyPhone || '');
@@ -382,6 +385,43 @@ export default function SettingsModal({
               ไปที่แอป →
             </span>
           </a>
+
+          {/* Cloud Synchronization Card */}
+          <div className="bg-[#FAF9F5] p-3 rounded-2xl border border-stone-200 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl shrink-0">☁️</span>
+                <div className="min-w-0">
+                  <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">
+                    ระบบ Cloud Sync ครอบครัว (Supabase)
+                  </h4>
+                  <p className="text-[10px] sm:text-xs text-stone-500 truncate">
+                    ซิงก์ข้อมูลอัตโนมัติกับ HomeSpace บ้านของเรา
+                  </p>
+                </div>
+              </div>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                cloudStatus === 'synced' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                cloudStatus === 'syncing' ? 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse' :
+                'bg-amber-100 text-amber-800 border-amber-300'
+              }`}>
+                {cloudStatus === 'synced' ? 'เชื่อมต่อแล้ว 🟢' : cloudStatus === 'syncing' ? 'กำลังซิงก์ 🔄' : 'ออฟไลน์ 🟡'}
+              </span>
+            </div>
+
+            <div className="pt-1 flex items-center justify-between gap-2 text-xs border-t border-stone-200/60">
+              <span className="text-[10px] sm:text-[11px] text-stone-500 truncate">
+                {lastSyncTime ? `ซิงก์ล่าสุด: ${lastSyncTime.toLocaleTimeString('th-TH')}` : 'ซิงก์อัตโนมัติแบบ Real-time'}
+              </span>
+              <button
+                type="button"
+                onClick={onForceSync}
+                className="btn-tactile px-3 py-1 rounded-xl bg-white border border-stone-300 hover:border-emerald-500 text-stone-800 font-bold text-xs cursor-pointer shadow-xs shrink-0"
+              >
+                กดซิงก์ทันที 🔄
+              </button>
+            </div>
+          </div>
 
           {/* 5. Backup & Restore */}
           <div className="bg-[#FAF9F5] p-2.5 sm:p-3 rounded-2xl border border-stone-200 space-y-1.5">

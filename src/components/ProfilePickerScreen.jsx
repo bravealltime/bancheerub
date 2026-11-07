@@ -8,7 +8,9 @@ export default function ProfilePickerScreen({
   books,
   onSelectBookWithPin,
   onAddBook,
-  onDeleteBook
+  onDeleteBook,
+  cloudStatus = 'synced',
+  onForceSync
 }) {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
@@ -62,8 +64,8 @@ export default function ProfilePickerScreen({
         
         {/* Top Header */}
         <div className="text-center space-y-2 pb-1">
-          {/* Quick link back to HomeSpace */}
-          <div className="flex justify-center pb-1">
+          {/* Quick link back to HomeSpace & Cloud sync indicator */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pb-1">
             <a
               href="https://homespace-rose.vercel.app"
               target="_top"
@@ -74,6 +76,20 @@ export default function ProfilePickerScreen({
               <span>กลับสู่ HomeSpace บ้านของเรา</span>
               <span className="text-stone-400">→</span>
             </a>
+
+            <button
+              type="button"
+              onClick={onForceSync}
+              className={`btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shadow-xs cursor-pointer transition-all ${
+                cloudStatus === 'synced' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                cloudStatus === 'syncing' ? 'bg-blue-50 text-blue-800 border-blue-300 animate-pulse' :
+                'bg-amber-50 text-amber-800 border-amber-300'
+              }`}
+              title="สถานะ Cloud Sync (แตะเพื่อกดรีเฟรชซิงก์)"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{cloudStatus === 'synced' ? 'ซิงก์ Cloud แล้ว 🟢' : cloudStatus === 'syncing' ? 'กำลังซิงก์... 🔄' : 'ออฟไลน์ 🟡'}</span>
+            </button>
           </div>
 
           <div className="w-16 h-16 rounded-2xl bg-white border border-stone-300 flex items-center justify-center text-3xl mx-auto shadow-xs">

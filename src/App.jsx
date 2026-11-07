@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import ProfilePickerScreen from './components/ProfilePickerScreen';
 import SummaryCard from './components/SummaryCard';
@@ -19,6 +19,14 @@ import { DEFAULT_REMINDERS } from './data/defaultReminders';
 import { DEFAULT_BOOKS, DEFAULT_ADMIN_PIN } from './data/defaultBooks';
 import { getTodayString } from './utils/thaiDate';
 import { Phone } from 'lucide-react';
+import {
+  fetchLedgerState,
+  syncLedgerToCloud,
+  saveTransactionToCloud,
+  deleteTransactionFromCloud,
+  saveBookToCloud,
+  deleteBookFromCloud
+} from './services/ledgerApi';
 
 export default function App() {
   // 1. Persistent State (Free of mock data)
@@ -198,6 +206,125 @@ export default function App() {
     localStorage.setItem('banchee_completed_reminders', JSON.stringify(completedReminders));
   }, [completedReminders]);
 
+  // Cloud Sync State (HomeSpace + Supabase)
+  const [cloudStatus, setCloudStatus] = useState('syncing'); // 'synced' | 'syncing' | 'offline'
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+
+  const transactionsRef = useRef(transactions);
+  const booksRef = useRef(books);
+  const remindersRef = useRef(reminders);
+
+  useEffect(() => {
+    transactionsRef.current = transactions;
+    booksRef.current = books;
+    remindersRef.current = reminders;
+  });
+
+  // Background Cloud Sync & Auto-merge
+  const pullCloudState = useCallback(async () => {
+    try {
+      const data = await fetchLedgerState('family-main');
+      if (data && data.success) {
+        // 1. Transactions merge
+        if (Array.isArray(data.transactions) && data.transactions.length > 0) {
+          setTransactions(prev => {
+            const map = new Map();
+            data.transactions.forEach(t => map.set(t.id, t));
+            prev.forEach(t => {
+              if (!map.has(t.id)) {
+                map.set(t.id, t);
+                saveTransactionToCloud(t, 'family-main').catch(() => {});
+              }
+            });
+            return Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
+          });
+        }
+
+        // 2. Books merge
+        if (Array.isArray(data.books) && data.books.length > 0) {
+          setBooks(prev => {
+            const map = new Map();
+            data.books.forEach(b => map.set(b.id, b));
+            prev.forEach(b => {
+              if (!map.has(b.id)) {
+                map.set(b.id, b);
+                saveBookToCloud(b, 'family-main').catch(() => {});
+              }
+            });
+            return Array.from(map.values());
+          });
+        }
+
+        setCloudStatus('synced');
+        setLastSyncTime(new Date());
+      }
+    } catch (err) {
+      console.warn('[Ledger Cloud Sync] Offline or server unreachable:', err.message);
+      setCloudStatus('offline');
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchLedgerState('family-main')
+      .then(data => {
+        if (!isMounted || !data?.success) return;
+        if (Array.isArray(data.transactions) && data.transactions.length > 0) {
+          setTransactions(prev => {
+            const map = new Map();
+            data.transactions.forEach(t => map.set(t.id, t));
+            prev.forEach(t => {
+              if (!map.has(t.id)) map.set(t.id, t);
+            });
+            return Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
+          });
+        } else if (transactionsRef.current.length > 0) {
+          syncLedgerToCloud({ books: booksRef.current, transactions: transactionsRef.current, reminders: remindersRef.current }, 'family-main').catch(() => {});
+        }
+
+        if (Array.isArray(data.books) && data.books.length > 0) {
+          setBooks(prev => {
+            const map = new Map();
+            data.books.forEach(b => map.set(b.id, b));
+            prev.forEach(b => {
+              if (!map.has(b.id)) map.set(b.id, b);
+            });
+            return Array.from(map.values());
+          });
+        } else if (booksRef.current.length > 0) {
+          syncLedgerToCloud({ books: booksRef.current, transactions: transactionsRef.current, reminders: remindersRef.current }, 'family-main').catch(() => {});
+        }
+        setCloudStatus('synced');
+        setLastSyncTime(new Date());
+      })
+      .catch(() => {
+        if (isMounted) setCloudStatus('offline');
+      });
+
+    const interval = setInterval(pullCloudState, 20000);
+    const onFocus = () => pullCloudState();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onFocus);
+    };
+  }, [pullCloudState]);
+
+  const handleForceSync = async () => {
+    setCloudStatus('syncing');
+    try {
+      await syncLedgerToCloud({ books, transactions, reminders }, 'family-main');
+      await pullCloudState();
+      setCloudStatus('synced');
+    } catch {
+      setCloudStatus('offline');
+    }
+  };
+
   // Current active book object
   const currentBook = books.find(b => b.id === activeBookId) || books[0];
 
@@ -276,6 +403,9 @@ export default function App() {
 
   const handleDeleteTransaction = (id) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
+    deleteTransactionFromCloud(id)
+      .then(() => setCloudStatus('synced'))
+      .catch(() => setCloudStatus('offline'));
   };
 
   const handleSaveTransaction = (item) => {
@@ -284,6 +414,9 @@ export default function App() {
     } else {
       setTransactions(prev => [item, ...prev]);
     }
+    saveTransactionToCloud(item, 'family-main')
+      .then(() => setCloudStatus('synced'))
+      .catch(() => setCloudStatus('offline'));
   };
 
   const handleRestoreTransactions = (newItems) => {
@@ -303,6 +436,9 @@ export default function App() {
 
   const handleAddBook = (newBook) => {
     setBooks(prev => [...prev, newBook]);
+    saveBookToCloud(newBook, 'family-main')
+      .then(() => setCloudStatus('synced'))
+      .catch(() => setCloudStatus('offline'));
   };
 
   const handleDeleteBook = (bookId) => {
@@ -311,6 +447,9 @@ export default function App() {
     if (activeBookId === bookId) {
       setActiveBookId(null);
     }
+    deleteBookFromCloud(bookId)
+      .then(() => setCloudStatus('synced'))
+      .catch(() => setCloudStatus('offline'));
   };
 
   const fontScaleClass = 
@@ -327,6 +466,8 @@ export default function App() {
           onAddBook={handleAddBook}
           onDeleteBook={handleDeleteBook}
           transactions={transactions}
+          cloudStatus={cloudStatus}
+          onForceSync={handleForceSync}
         />
 
         {/* 4-digit PIN Modal */}
@@ -357,6 +498,9 @@ export default function App() {
       <Header
         currentBook={currentBook}
         onSwitchBook={() => setActiveBookId(null)}
+        cloudStatus={cloudStatus}
+        lastSyncTime={lastSyncTime}
+        onForceSync={handleForceSync}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
         fontSize={fontSize}
@@ -497,6 +641,9 @@ export default function App() {
         onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
         onOpenTutorial={() => setShowTutorial(true)}
         onSwitchBook={() => setActiveBookId(null)}
+        cloudStatus={cloudStatus}
+        lastSyncTime={lastSyncTime}
+        onForceSync={handleForceSync}
       />
 
       <RemindersModal

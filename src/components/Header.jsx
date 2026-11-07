@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, Type, Settings, Bell, ArrowLeft } from 'lucide-react';
+import { Volume2, VolumeX, Type, Settings, Bell, ArrowLeft, Cloud } from 'lucide-react';
 import { formatThaiDateFull, getTodayString } from '../utils/thaiDate';
 import { playTapSound } from '../utils/audio';
 
@@ -13,7 +13,9 @@ export default function Header({
   onOpenSettings,
   onOpenMonthlyReport,
   onOpenReminders,
-  pendingRemindersCount = 0
+  pendingRemindersCount = 0,
+  cloudStatus = 'synced',
+  onForceSync
 }) {
   const todayStr = getTodayString();
   const formattedToday = formatThaiDateFull(todayStr);
@@ -74,6 +76,28 @@ export default function Header({
             <span className="text-base">🏡</span>
             <span className="hidden sm:inline">HomeSpace</span>
           </a>
+
+          {/* Cloud Sync Status Indicator */}
+          <button
+            onClick={() => {
+              playTapSound();
+              if (onForceSync) onForceSync();
+            }}
+            title={
+              cloudStatus === 'synced' ? 'ซิงก์กับ Cloud ของบ้านเรียบร้อยแล้ว (แตะเพื่อรีเฟรช)' :
+              cloudStatus === 'syncing' ? 'กำลังซิงก์ข้อมูลกับ Cloud...' : 'ออฟไลน์: บันทึกข้อมูลในเครื่องเรียบร้อย (จะซิงก์เมื่อต่อเน็ต)'
+            }
+            className={`btn-tactile flex items-center gap-1 px-2 h-9 sm:h-10 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+              cloudStatus === 'synced' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' :
+              cloudStatus === 'syncing' ? 'bg-blue-50 border-blue-300 text-blue-800 animate-pulse' :
+              'bg-amber-50 border-amber-300 text-amber-800'
+            }`}
+          >
+            <Cloud className="w-4 h-4 stroke-[2]" />
+            <span className="hidden md:inline">
+              {cloudStatus === 'synced' ? 'ซิงก์แล้ว' : cloudStatus === 'syncing' ? 'กำลังซิงก์' : 'ออฟไลน์'}
+            </span>
+          </button>
 
           {/* Sound Toggle */}
           <button
