@@ -58,15 +58,16 @@ export function parseAccountingSentence(input) {
   }
 
   // 3. Segment into Clauses
-  const incomePersonTriggers = '(?:(?:ลูกสาว|ลูกชาย|ลูก|หลาน|คุณพ่อ|คุณแม่|พ่อ|แม่|พี่|น้อง|ญาติ|เพื่อน|ลูกค้า)\\s*)?(?:ได้เงินมาจาก|ได้รับเงินจาก|ได้เงินจาก|โอนเงินมาให้|ให้เงินมา|โอนให้)';
-  const segmented = text
-    .replace(new RegExp(`(?:โดย|แล้ว)?${incomePersonTriggers}`, 'g'), m => '||| [INCOME_TRIGGER] ' + m + ' ')
-    .replace(/(?:แล้วก็(?:ไป)?|จากนั้น|แถม)?(?:ซื้อ|จ่าย|โอนให้|เติม|ค่ายา|ค่าไฟ|ค่าน้ำ)+/g, m => '||| ' + m + ' ')
-    .replace(new RegExp(`\\s*(?:กับ|และ|รวมถึง)\\s*(?=[^\\s]+(?:อีก)?\\s*${THAI_NUM_REGEX_PART}\\s*(?:${CLASSIFIERS.join('|')}))`, 'g'), '||| ')
-    .replace(new RegExp(`\\s*(?:กับ|และ|รวมถึง)\\s*(?=[^\\s]+\\s*${THAI_NUM_REGEX_PART}\\s*บาท)`, 'g'), '||| ')
-    .replace(/[,;\n]+/g, '||| ');
+  let clean = text
+    // Connectors following an amount (e.g. "300 บาท แล้วก็", "10 บาท กับ", "50 บาท ก็")
+    .replace(/(?<=(?:บาท|฿|[0-9]+)\s*)\s*(?:แล้วก็|และก็|แล้ว|จากนั้น|กับ|และ|ก็|แถม|โดย)\s*/g, ' ||| ')
+    // Explicit transition words starting new action
+    .replace(/\s*(?:แล้วก็|และก็|จากนั้น)\s*/g, ' ||| ')
+    // Action verb boundary when preceded by amount without explicit connector
+    .replace(/(?<=(?:บาท|฿|[0-9]+)\s*)\s*(?=(?:ซื้อ|จ่าย|กิน|ดื่ม|สั่ง|ได้เงิน|รับเงิน|ขาย))/g, ' ||| ')
+    .replace(/[,;\n]+/g, ' ||| ');
 
-  const rawClauses = segmented.split('|||')
+  const rawClauses = clean.split('|||')
     .map(c => c.trim())
     .filter(c => c.length > 0);
 
@@ -76,9 +77,9 @@ export function parseAccountingSentence(input) {
     const clause = rawClauses[idx];
     if (!clause) continue;
 
-    // Check multiplication: e.g. "20 ชิ้น ชิ้นละ 10 บาท", "10 ไม้ ไม้ละ 10 บาท", "3 กิโล กิโลละ 40"
+    // Check multiplication: e.g. "20 ชิ้น ชิ้นละ 10 บาท", "10 ไม้ ไม้ละ 10 บาท", "2 แก้วแก้วละ 10"
     const multiPattern = new RegExp(
-      `(${THAI_NUM_REGEX_PART})\\s*(${CLASSIFIERS.join('|')})\\s*(?:(?:${CLASSIFIERS.join('|')})?\\s*ละ)\\s*(${THAI_NUM_REGEX_PART})\\s*(?:บาท|฿)?`,
+      `(${THAI_NUM_REGEX_PART})\\s*(${CLASSIFIERS.join('|')})\\s*(?:(?:${CLASSIFIERS.join('|')})?\\s*ละ)\\s*(${THAI_NUM_REGEX_PART})\\s*(?:บาท|฿|กว่า)?`,
       'i'
     );
 
@@ -92,12 +93,12 @@ export function parseAccountingSentence(input) {
       // Extract item name
       let itemName = clause
         .replace(multiMatch[0], '')
-        .replace(/^(วันนี้ไป|ไป|มา|อีก|แล้วก็|แถม|และ|กับ)\s*/g, '')
-        .replace(/\s*(บาท|฿|มา|อีก|ครับ|ค่ะ)\s*$/g, '')
+        .replace(/^(วันนี้ไป|วันนี้|ไป|มา|อีก|แล้วก็|แถม|และ|กับ|ก็)\s*/g, '')
+        .replace(/\s*(บาท|฿|มา|อีก|กว่า|ครับ|ค่ะ|ไปอีก|ไป)\s*$/g, '')
         .trim();
 
       if (!itemName) {
-        itemName = `สินค้า ${qty} ${unit}`;
+        itemName = `${unit}`;
       }
 
       // Determine category & type
@@ -148,7 +149,9 @@ export function parseAccountingSentence(input) {
     // Single amount clause
     const amount = parseThaiNumberWords(clause);
     if (amount > 0) {
-      const isIncome = /INCOME_TRIGGER|ได้เงิน|รับเงิน|ให้เงิน|โอนมา|คุณพ่อ|พ่อ|แม่|ลูก|หลาน|เงินเดือน|บำนาญ|เบี้ย|ขาย/.test(clause);
+      const isIncome = /(?:ได้เงิน|รับเงิน|ได้ค่า|ค่าจ้าง|เงินเดือน|บำนาญ|เบี้ย|ขาย|โอนมา|ให้เงิน)/.test(clause) 
+        && !/โอนให้|จ่าย|ซื้อ/.test(clause);
+
       const type = isIncome ? 'income' : 'expense';
 
       let categoryId = 'food';
@@ -156,7 +159,11 @@ export function parseAccountingSentence(input) {
       let categoryIcon = '🍲';
 
       if (isIncome) {
-        if (/คุณพ่อ|พ่อ|คุณแม่|แม่|ลูก|หลาน|ครอบครัว/.test(clause)) {
+        if (/ทำงาน|งาน|ค่าจ้าง|ค้าขาย|เงินเดือน|รับจ้าง/.test(clause)) {
+          categoryId = 'work';
+          categoryName = 'ค้าขาย / ทำงาน / ค่าจ้าง';
+          categoryIcon = '💰';
+        } else if (/คุณพ่อ|คุณแม่|พ่อ|แม่|ลูก|หลาน|ครอบครัว/.test(clause)) {
           categoryId = 'family_income';
           categoryName = 'ลูกหลานให้เงิน';
           categoryIcon = '👨‍👩‍👦';
@@ -164,10 +171,6 @@ export function parseAccountingSentence(input) {
           categoryId = 'pension';
           categoryName = 'เบี้ยคนแก่ / บำนาญ';
           categoryIcon = '👴';
-        } else if (/ขาย|ค้าขาย|เงินเดือน|ค่าจ้าง/.test(clause)) {
-          categoryId = 'work';
-          categoryName = 'ค้าขาย / ทำงาน / ค่าจ้าง';
-          categoryIcon = '💰';
         } else {
           categoryId = 'other_income';
           categoryName = 'เงินเข้าอื่นๆ';
@@ -178,7 +181,7 @@ export function parseAccountingSentence(input) {
           categoryId = 'medicine';
           categoryName = 'ค่ายา / หาหมอ';
           categoryIcon = '💊';
-        } else if (/ไฟ|น้ำ|เน็ต|โทรศัพท์|บิล/.test(clause)) {
+        } else if (/ไฟ|น้ำประปา|เน็ต|โทรศัพท์|บิล/.test(clause)) {
           categoryId = 'bills';
           categoryName = 'ค่าน้ำ / ค่าไฟ / เน็ต';
           categoryIcon = '💡';
@@ -190,24 +193,23 @@ export function parseAccountingSentence(input) {
           categoryId = 'merit';
           categoryName = 'ทำบุญ / ช่วยงาน';
           categoryIcon = '🙏';
+        } else if (/ของใช้|สบู่|ผงซักฟอก|ยาสระผม/.test(clause)) {
+          categoryId = 'groceries';
+          categoryName = 'ไปตลาด / ของใช้';
+          categoryIcon = '🛒';
+        } else {
+          categoryId = 'food';
+          categoryName = 'กับข้าว / ของกิน';
+          categoryIcon = '🍲';
         }
       }
 
       // Clean note
       let cleanNote = clause
-        .replace(/\[INCOME_TRIGGER\]/g, '')
         .replace(new RegExp(String(amount), 'g'), '')
-        .replace(/^(วันนี้ไป|ไป|มา|อีก|แล้วก็|แถม|และ|กับ|โดย|ทั้งหมด)\s*/g, '')
-        .replace(/\s*(บาท|฿|ทั้งหมด|ครับ|ค่ะ)\s*/g, '')
+        .replace(/^(วันนี้ไป|วันนี้|ไป|มา|อีก|แล้วก็|แถม|และ|กับ|โดย|ทั้งหมด|ก็)\s*/g, '')
+        .replace(/\s*(บาท|฿|ทั้งหมด|ไปอีก|ไป|มา|อีก|กว่า|ครับ|ค่ะ)\s*$/g, '')
         .trim();
-
-      if (isIncome) {
-        if (/คุณพ่อ/.test(clause)) cleanNote = 'ได้เงินมาจากคุณพ่อ';
-        else if (/คุณแม่|แม่/.test(clause)) cleanNote = 'ได้เงินมาจากคุณแม่';
-        else if (/ลูกสาว/.test(clause)) cleanNote = 'ลูกสาวให้เงิน';
-        else if (/ลูก/.test(clause)) cleanNote = 'ลูกให้เงิน';
-        else if (/หลาน/.test(clause)) cleanNote = 'หลานให้เงิน';
-      }
 
       if (!cleanNote || cleanNote.length < 2) {
         cleanNote = isIncome ? 'ได้เงินมา' : 'จ่ายเงิน';
