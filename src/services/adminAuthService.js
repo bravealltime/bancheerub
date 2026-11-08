@@ -30,21 +30,26 @@ export function setAdminEmail(email) {
 export async function sendAdminEmailOtp(email = getAdminEmail()) {
   try {
     const targetEmail = (email || DEFAULT_ADMIN_EMAIL).trim();
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://bancheerub.vercel.app';
     const { data, error } = await supabase.auth.signInWithOtp({
       email: targetEmail,
       options: {
-        shouldCreateUser: true
+        shouldCreateUser: true,
+        emailRedirectTo: origin
       }
     });
 
     if (error) {
       console.warn('[Admin OTP] Supabase send error:', error);
-      throw new Error(error.message || 'ไม่สามารถส่งรหัสผ่านอีเมลได้');
+      if (error.status === 429 || error.message?.includes('rate limit')) {
+        throw new Error('ส่งอีเมลเกินโควต้าชั่วคราว กรุณาใช้รหัสผ่านแอดมิน (PIN) แทนเพื่อเข้าใช้งานได้ทันทีครับ');
+      }
+      throw new Error(error.message || 'ไม่สามารถส่งอีเมลได้');
     }
 
     return {
       success: true,
-      message: `ส่งรหัส OTP เรียบร้อยแล้วไปยัง ${targetEmail}`,
+      message: `ส่งลิงก์ยืนยันเรียบร้อยแล้วไปยัง ${targetEmail}`,
       data
     };
   } catch (err) {

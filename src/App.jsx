@@ -30,7 +30,7 @@ import {
   saveBookToCloud,
   deleteBookFromCloud
 } from './services/ledgerApi';
-import { uploadReceiptPhotoToSupabase } from './services/supabase';
+import { uploadReceiptPhotoToSupabase, supabase } from './services/supabase';
 import {
   getInitialHouseId,
   getHouseName,
@@ -93,6 +93,29 @@ export default function App() {
       sessionStorage.removeItem('banchee_admin_auth');
     } catch {}
   }, []);
+
+  // Listen for Admin Magic Link return from email
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email === adminEmail) {
+        setIsAdminMode(true);
+        try {
+          sessionStorage.setItem('banchee_admin_auth', 'true');
+        } catch {}
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.email === adminEmail) {
+        setIsAdminMode(true);
+        try {
+          sessionStorage.setItem('banchee_admin_auth', 'true');
+        } catch {}
+      }
+    });
+
+    return () => subscription?.unsubscribe();
+  }, [adminEmail]);
 
   // 1. Persistent State (Free of mock data, isolated per house)
   const [transactions, setTransactions] = useState(() => {
