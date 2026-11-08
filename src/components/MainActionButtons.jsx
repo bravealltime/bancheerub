@@ -54,7 +54,7 @@ export default function MainActionButtons({ onOpenExpense, onOpenIncome, onOpenV
         </button>
       </div>
 
-      {/* 🎙️ Quick Voice Recorder Bar with Realtime Transcript Preview */}
+      {/* 🎙️ Quick Voice Recorder Bar with AI Math Accounting */}
       {onOpenVoice && (
         <button
           type="button"
@@ -62,24 +62,29 @@ export default function MainActionButtons({ onOpenExpense, onOpenIncome, onOpenV
             playTapSound();
             onOpenVoice();
           }}
-          className="w-full btn-tactile group relative overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white px-3 sm:px-3.5 py-2 min-h-[46px] rounded-2xl shadow-xs hover:shadow-md border border-amber-300/30 flex items-center justify-between gap-2 text-left cursor-pointer transition-all"
-          aria-label="พูดเพื่อบันทึกด่วน"
+          className="w-full btn-tactile group relative overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white px-3 sm:px-3.5 py-2.5 min-h-[50px] rounded-2xl shadow-xs hover:shadow-md border border-amber-300/30 flex items-center justify-between gap-2 text-left cursor-pointer transition-all"
+          aria-label="พูดเพื่อบันทึกด้วย AI"
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm sm:text-base shrink-0 group-hover:scale-105 transition-transform">
-              🎙️
+            <span className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+              🤖
             </span>
             <div className="min-w-0 flex-1">
-              <span className="font-bold text-xs sm:text-sm tracking-tight text-white block truncate leading-tight">
-                พูดเพื่อบันทึก
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-xs sm:text-sm tracking-tight text-white leading-tight">
+                  พูดบันทึกด้วย AI (คำนวณเลข & แยกรายการ)
+                </span>
+                <span className="text-[10px] font-black bg-white/25 text-white px-1.5 py-0.2 rounded-md">
+                  ใหม่ ✨
+                </span>
+              </div>
               <span className="text-[10px] sm:text-[11px] text-amber-100 font-normal block truncate leading-tight">
-                ถอดเสียง & แยกเข้าบัญชีอัตโนมัติ
+                เช่น ซื้อไก่ 20 ชิ้น ชิ้นละ 10 บาท ได้เงินจากพ่อ 300 บาท
               </span>
             </div>
           </div>
           <span className="text-[11px] sm:text-xs font-bold bg-white text-stone-900 px-2.5 py-1 rounded-xl shrink-0 shadow-2xs whitespace-nowrap">
-            แตะแล้วพูด 🔊
+            แตะแล้วพูด 🎙️
           </span>
         </button>
       )}

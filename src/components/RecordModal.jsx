@@ -30,7 +30,8 @@ function RecordModalForm({
   incomeCategories = INCOME_CATEGORIES,
   onOpenCategoryManager,
   currentBook,
-  autoStartVoice = false
+  autoStartVoice = false,
+  onOpenAiLedger
 }) {
   const [type, setType] = useState(() => editingItem ? editingItem.type : initialType);
   const [amountStr, setAmountStr] = useState(() => editingItem ? String(editingItem.amount) : '');
@@ -323,6 +324,23 @@ function RecordModalForm({
             </button>
           </div>
 
+          {/* AI Math Calculator & Narrative Parser Shortcut */}
+          {onOpenAiLedger && !editingItem && (
+            <button
+              type="button"
+              onClick={() => {
+                playTapSound();
+                onClose();
+                onOpenAiLedger();
+              }}
+              className="btn-tactile px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs shrink-0"
+              title="เปิด AI วิเคราะห์ประโยคยาว & คิดเลขหลายรายการ"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <span className="hidden xs:inline">AI คิดเลข</span>
+            </button>
+          )}
+
           {/* Book owner label */}
           <div className="text-right min-w-0 flex-1 hidden sm:block">
             <span className="text-xs font-semibold text-stone-500 truncate block">
@@ -472,6 +490,26 @@ function RecordModalForm({
               <p className="text-xs font-semibold text-stone-700 bg-white py-1 px-2.5 rounded-lg border border-stone-200 inline-block animate-fade">
                 {voiceHint}
               </p>
+            )}
+
+            {/* Compound / Arithmetic detected alert */}
+            {voiceTranscript && /(?:ชิ้นละ|ไม้ละ|ขวดละ|ละ|กับ|และ|โดยได้|ได้เงิน|เหลือเท่าไหร่)/.test(voiceTranscript) && onOpenAiLedger && (
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-2.5 flex items-center justify-between gap-2 animate-in fade-in">
+                <span className="text-xs text-amber-950 font-medium truncate">
+                  ✨ มีคิดเลข/หลายรายการ
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound();
+                    onClose();
+                    onOpenAiLedger();
+                  }}
+                  className="btn-tactile px-2.5 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 cursor-pointer shadow-xs"
+                >
+                  เปิด AI แยกรายการ
+                </button>
+              </div>
             )}
 
             {/* Quick add buttons (1 row) */}

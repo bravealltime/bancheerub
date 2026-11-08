@@ -17,6 +17,7 @@ import OnboardingTutorialModal from './components/OnboardingTutorialModal';
 import HouseManagerModal from './components/HouseManagerModal';
 import HouseNameSetupModal from './components/HouseNameSetupModal';
 import AdminAuthModal from './components/AdminAuthModal';
+import AiSmartLedgerModal from './components/AiSmartLedgerModal';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/defaultCategories';
 import { DEFAULT_REMINDERS } from './data/defaultReminders';
 import { DEFAULT_BOOKS, DEFAULT_ADMIN_PIN } from './data/defaultBooks';
@@ -257,6 +258,7 @@ export default function App() {
   const [recordModalType, setRecordModalType] = useState('expense');
   const [editingItem, setEditingItem] = useState(null);
   const [autoStartVoice, setAutoStartVoice] = useState(false);
+  const [isAiLedgerModalOpen, setIsAiLedgerModalOpen] = useState(false);
   const [isMonthlyReportOpen, setIsMonthlyReportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemindersOpen, setIsRemindersOpen] = useState(false);
@@ -570,10 +572,17 @@ export default function App() {
   };
 
   const handleOpenVoice = () => {
-    setEditingItem(null);
-    setRecordModalType('expense');
-    setAutoStartVoice(true);
-    setIsRecordModalOpen(true);
+    setIsAiLedgerModalOpen(true);
+  };
+
+  const handleBatchSaveTransactions = async (newItems) => {
+    if (!newItems || newItems.length === 0) return;
+    setTransactions(prev => [...newItems, ...prev]);
+    for (const item of newItems) {
+      saveTransactionToCloud(item, currentHouseId)
+        .then(() => setCloudStatus('synced'))
+        .catch(() => setCloudStatus('offline'));
+    }
   };
 
   const handleEditTransaction = (item) => {
@@ -856,6 +865,21 @@ export default function App() {
         incomeCategories={incomeCategories}
         onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
         currentBook={currentBook}
+        onOpenAiLedger={() => {
+          setIsRecordModalOpen(false);
+          setIsAiLedgerModalOpen(true);
+        }}
+      />
+
+      {/* AI Smart Ledger & Mathematical Parser Modal */}
+      <AiSmartLedgerModal
+        isOpen={isAiLedgerModalOpen}
+        onClose={() => setIsAiLedgerModalOpen(false)}
+        onBatchSave={handleBatchSaveTransactions}
+        currentBook={currentBook}
+        soundEnabled={soundEnabled}
+        expenseCategories={expenseCategories}
+        incomeCategories={incomeCategories}
       />
 
       <MonthlyReportModal
