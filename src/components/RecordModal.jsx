@@ -46,8 +46,13 @@ function RecordModalForm({
   const [liveStreamingText, setLiveStreamingText] = useState('');
   const [voiceHint, setVoiceHint] = useState('');
   const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [silenceSecondsLeft, setSilenceSecondsLeft] = useState(null);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const silenceTimeoutRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
+  const shouldKeepListeningRef = useRef(false);
+  const accumulatedTranscriptRef = useRef('');
 
   const isExpense = type === 'expense';
   const categories = isExpense ? expenseCategories : incomeCategories;
@@ -122,6 +127,58 @@ function RecordModalForm({
     }
   };
 
+  const stopVoiceRecognition = () => {
+    shouldKeepListeningRef.current = false;
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setSilenceSecondsLeft(null);
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  const resetSilenceTimer = () => {
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    let sec = 4;
+    setSilenceSecondsLeft(sec);
+
+    countdownIntervalRef.current = setInterval(() => {
+      sec -= 1;
+      if (sec > 0) {
+        setSilenceSecondsLeft(sec);
+      } else {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
+        setSilenceSecondsLeft(null);
+      }
+    }, 1000);
+
+    silenceTimeoutRef.current = setTimeout(() => {
+      stopVoiceRecognition();
+    }, 4000);
+  };
+
   const handleToggleVoice = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -130,58 +187,45 @@ function RecordModalForm({
     }
 
     if (isListening) {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {}
-        recognitionRef.current = null;
-      }
-      setIsListening(false);
+      stopVoiceRecognition();
       return;
     }
 
     try {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {}
-        recognitionRef.current = null;
-      }
+      stopVoiceRecognition();
+      shouldKeepListeningRef.current = true;
+      accumulatedTranscriptRef.current = '';
 
       const recognition = new SpeechRecognition();
       recognition.lang = 'th-TH';
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
 
       recognition.onstart = () => {
         setIsListening(true);
         setLiveStreamingText('');
-        setVoiceHint('กำลังฟังเสียงพูดสด... (Live)');
+        setVoiceHint('กำลังฟังเสียงต่อเนื่อง... พูดให้จบประโยคได้เลยครับ');
       };
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
         let interimTranscript = '';
 
-        for (let i = 0; i < event.results.length; ++i) {
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const trans = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            accumulatedTranscriptRef.current = (accumulatedTranscriptRef.current + ' ' + trans).trim();
           } else {
-            interimTranscript += event.results[i][0].transcript;
+            interimTranscript += trans;
           }
         }
 
-        const streamingText = (finalTranscript + ' ' + interimTranscript).trim();
-        if (streamingText) {
-          setLiveStreamingText(streamingText);
-        }
-
-        const textToParse = finalTranscript.trim() || interimTranscript.trim();
-        if (textToParse) {
-          setVoiceTranscript(textToParse);
+        const fullCurrentText = (accumulatedTranscriptRef.current + ' ' + interimTranscript).trim();
+        if (fullCurrentText) {
+          setLiveStreamingText(fullCurrentText);
+          setVoiceTranscript(fullCurrentText);
           setVoiceHint('ถอดเสียงพูดได้แล้วครับ');
 
-          const parsed = parseThaiVoiceInput(textToParse);
+          const parsed = parseThaiVoiceInput(fullCurrentText);
           if (parsed) {
             if (parsed.type) {
               setType(parsed.type);
@@ -196,38 +240,41 @@ function RecordModalForm({
               setNote(parsed.note);
             }
           }
+
+          resetSilenceTimer();
         }
       };
 
       recognition.onerror = (e) => {
         console.warn('Speech recognition error:', e);
-        setIsListening(false);
-        recognitionRef.current = null;
+        if (e.error === 'no-speech') return;
+        stopVoiceRecognition();
         setVoiceHint('ไม่ได้ยินเสียง ลองแตะปุ่มไมโครโฟนแล้วพูดใหม่อีกครั้งครับ');
       };
 
       recognition.onend = () => {
-        setIsListening(false);
-        recognitionRef.current = null;
+        if (shouldKeepListeningRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            stopVoiceRecognition();
+          }
+        } else {
+          stopVoiceRecognition();
+        }
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
-      setIsListening(false);
-      recognitionRef.current = null;
+      stopVoiceRecognition();
       console.error('Speech recognition error', err);
     }
   };
 
   React.useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {}
-        recognitionRef.current = null;
-      }
+      stopVoiceRecognition();
     };
   }, []);
 
@@ -484,6 +531,15 @@ function RecordModalForm({
                 {isListening ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-stone-700" />}
               </button>
             </div>
+
+            {/* Listening state with 4-second silence countdown */}
+            {isListening && (
+              <p className="text-xs font-semibold text-amber-900 bg-amber-50 py-1 px-2.5 rounded-lg border border-amber-300 inline-block animate-fade">
+                {silenceSecondsLeft !== null
+                  ? `⏱️ หยุดพูดแล้ว (จะตัดไมค์อัตโนมัติใน ${silenceSecondsLeft} วิ...)`
+                  : '🎙️ กำลังฟังต่อเนื่อง... พูดให้จบประโยคได้เลยครับ'}
+              </p>
+            )}
 
             {/* Voice hint if active and no transcript yet */}
             {voiceHint && !voiceTranscript && !isListening && (

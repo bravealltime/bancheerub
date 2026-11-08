@@ -30,9 +30,26 @@ function AiSmartLedgerModalContent({
   const [liveStreamingText, setLiveStreamingText] = useState('');
   const [parsedResult, setParsedResult] = useState(null);
   const [items, setItems] = useState([]);
+  const [silenceSecondsLeft, setSilenceSecondsLeft] = useState(null);
+
   const recognitionRef = useRef(null);
+  const silenceTimeoutRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
+  const shouldKeepListeningRef = useRef(false);
+  const accumulatedTranscriptRef = useRef('');
 
   const stopListening = useCallback(() => {
+    shouldKeepListeningRef.current = false;
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setSilenceSecondsLeft(null);
+
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
@@ -54,6 +71,41 @@ function AiSmartLedgerModalContent({
     }
   }, [soundEnabled]);
 
+  const resetSilenceTimer = useCallback((currentText) => {
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    let sec = 4;
+    setSilenceSecondsLeft(sec);
+
+    countdownIntervalRef.current = setInterval(() => {
+      sec -= 1;
+      if (sec > 0) {
+        setSilenceSecondsLeft(sec);
+      } else {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
+        setSilenceSecondsLeft(null);
+      }
+    }, 1000);
+
+    silenceTimeoutRef.current = setTimeout(() => {
+      shouldKeepListeningRef.current = false;
+      stopListening();
+      if (currentText && currentText.trim()) {
+        handleAnalyzeText(currentText.trim(), true);
+      }
+    }, 4000);
+  }, [stopListening, handleAnalyzeText]);
+
   const startListening = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -66,49 +118,64 @@ function AiSmartLedgerModalContent({
         recognitionRef.current = null;
       }
 
+      shouldKeepListeningRef.current = true;
+      accumulatedTranscriptRef.current = '';
+
       const recognition = new SpeechRecognition();
       recognition.lang = 'th-TH';
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
 
       recognition.onstart = () => {
         setIsListening(true);
-        setLiveStreamingText('กำลังรับฟังเสียงสด...');
+        setLiveStreamingText('กำลังรับฟังเสียงต่อเนื่อง... พูดให้จบประโยคได้เลยครับ');
       };
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
         let interimTranscript = '';
 
-        for (let i = 0; i < event.results.length; ++i) {
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const trans = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            accumulatedTranscriptRef.current = (accumulatedTranscriptRef.current + ' ' + trans).trim();
           } else {
-            interimTranscript += event.results[i][0].transcript;
+            interimTranscript += trans;
           }
         }
 
-        const currentStream = (finalTranscript + ' ' + interimTranscript).trim();
-        if (currentStream) {
-          setLiveStreamingText(currentStream);
-        }
-
-        const effectiveText = (finalTranscript || interimTranscript).trim();
-        if (effectiveText) {
-          setInputText(effectiveText);
-          handleAnalyzeText(effectiveText, false);
+        const fullCurrentText = (accumulatedTranscriptRef.current + ' ' + interimTranscript).trim();
+        if (fullCurrentText) {
+          setLiveStreamingText(fullCurrentText);
+          setInputText(fullCurrentText);
+          handleAnalyzeText(fullCurrentText, false);
+          // Wait 4 seconds of silence after user finishes speaking before auto-stopping
+          resetSilenceTimer(fullCurrentText);
         }
       };
 
       recognition.onerror = (e) => {
         console.warn('[AI Voice] Recognition error:', e);
+        if (e.error === 'no-speech') {
+          // Keep listening even if no-speech fired momentarily
+          return;
+        }
         setIsListening(false);
         recognitionRef.current = null;
       };
 
       recognition.onend = () => {
-        setIsListening(false);
-        recognitionRef.current = null;
+        // Keep listening unless silence timer expired or manually stopped
+        if (shouldKeepListeningRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsListening(false);
+            recognitionRef.current = null;
+          }
+        } else {
+          setIsListening(false);
+          recognitionRef.current = null;
+        }
       };
 
       recognitionRef.current = recognition;
@@ -118,7 +185,7 @@ function AiSmartLedgerModalContent({
       setIsListening(false);
       recognitionRef.current = null;
     }
-  }, [handleAnalyzeText]);
+  }, [handleAnalyzeText, resetSilenceTimer]);
 
   // Auto start speech recognition upon opening
   useEffect(() => {
@@ -328,11 +395,42 @@ function AiSmartLedgerModalContent({
               )}
             </div>
 
-            {/* Live Streaming Hint */}
-            {isListening && liveStreamingText && (
-              <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 font-medium animate-pulse flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                <span className="truncate">ได้ยินว่า: "{liveStreamingText}"</span>
+            {/* Live Streaming Hint with 4-second Countdown & Done Button */}
+            {isListening && (
+              <div className="p-3 rounded-2xl bg-amber-50/90 border border-amber-300 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                    <span className="text-xs font-bold text-amber-950">
+                      {silenceSecondsLeft !== null
+                        ? `⏱️ หยุดพูดแล้ว (จะตัดไมค์ & คิดเลขอัตโนมัติใน ${silenceSecondsLeft} วิ...)`
+                        : '🎙️ กำลังฟังต่อเนื่อง... พูดให้จบประโยคได้เลย (ไม่ตัดไมค์กลางคัน)'}
+                    </span>
+                  </div>
+
+                  {/* Manual immediate done button if user doesn't want to wait 4 seconds */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSuccessSound();
+                      shouldKeepListeningRef.current = false;
+                      stopListening();
+                      if (inputText.trim()) {
+                        handleAnalyzeText(inputText.trim(), true);
+                      }
+                    }}
+                    className="btn-tactile px-3 py-1 bg-[#2D6A4F] hover:bg-[#23533E] text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>เสร็จสิ้นทันที</span>
+                  </button>
+                </div>
+
+                {liveStreamingText && (
+                  <p className="text-xs text-stone-700 bg-white/80 p-2 rounded-xl border border-amber-200/60 leading-relaxed font-medium">
+                    "{liveStreamingText}"
+                  </p>
+                )}
               </div>
             )}
 
