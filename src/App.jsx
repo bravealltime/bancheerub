@@ -40,6 +40,7 @@ import {
   normalizeHouseCode,
   markHouseSetupDone
 } from './utils/houseManager';
+import { getAdminEmail, DEFAULT_ADMIN_EMAIL } from './services/adminAuthService';
 
 const getStorageKey = (baseKey, houseId) => {
   return houseId === DEFAULT_MAIN_HOUSE_ID ? baseKey : `${baseKey}_${houseId}`;
@@ -52,8 +53,15 @@ export default function App() {
   const [currentHouseName, setCurrentHouseName] = useState(() => getHouseName(initialHouse));
   const [isHouseManagerOpen, setIsHouseManagerOpen] = useState(false);
 
-  // Admin Privilege State (Only admins can manage the house or alter settings)
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  // Admin Privilege State (Guarded by OTP to tharanut@gmail.com)
+  const [adminEmail] = useState(() => getAdminEmail() || DEFAULT_ADMIN_EMAIL);
+  const [isAdminMode, setIsAdminMode] = useState(() => {
+    try {
+      return sessionStorage.getItem('banchee_admin_auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
   const [adminPendingCallback, setAdminPendingCallback] = useState(null);
 
@@ -68,6 +76,9 @@ export default function App() {
 
   const handleAdminAuthSuccess = useCallback(() => {
     setIsAdminMode(true);
+    try {
+      sessionStorage.setItem('banchee_admin_auth', 'true');
+    } catch {}
     setIsAdminAuthOpen(false);
     if (adminPendingCallback) {
       const cb = adminPendingCallback;
@@ -75,6 +86,13 @@ export default function App() {
       cb();
     }
   }, [adminPendingCallback]);
+
+  const handleExitAdminMode = useCallback(() => {
+    setIsAdminMode(false);
+    try {
+      sessionStorage.removeItem('banchee_admin_auth');
+    } catch {}
+  }, []);
 
   // 1. Persistent State (Free of mock data, isolated per house)
   const [transactions, setTransactions] = useState(() => {
@@ -629,7 +647,7 @@ export default function App() {
           isAdminMode={isAdminMode}
           onOpenHouseManager={() => requireAdminAction(() => setIsHouseManagerOpen(true))}
           onRequireAdmin={requireAdminAction}
-          onExitAdminMode={() => setIsAdminMode(false)}
+          onExitAdminMode={handleExitAdminMode}
         />
 
         {/* 4-digit PIN Modal */}
@@ -676,10 +694,11 @@ export default function App() {
           }}
         />
 
-        {/* Admin Authentication Modal */}
+        {/* Admin Authentication Modal (Email OTP to tharanut@gmail.com) */}
         <AdminAuthModal
           isOpen={isAdminAuthOpen}
           adminPin={adminPin}
+          adminEmail={adminEmail}
           onClose={() => {
             setIsAdminAuthOpen(false);
             setAdminPendingCallback(null);
@@ -839,6 +858,7 @@ export default function App() {
         }}
         adminPin={adminPin}
         onUpdateAdminPin={(newPin) => setAdminPin(newPin)}
+        adminEmail={adminEmail}
         fontSize={fontSize}
         onChangeFontSize={setFontSize}
         soundEnabled={soundEnabled}
@@ -921,10 +941,11 @@ export default function App() {
         }}
       />
 
-      {/* Admin Authentication Modal */}
+      {/* Admin Authentication Modal (Email OTP to tharanut@gmail.com) */}
       <AdminAuthModal
         isOpen={isAdminAuthOpen}
         adminPin={adminPin}
+        adminEmail={adminEmail}
         onClose={() => {
           setIsAdminAuthOpen(false);
           setAdminPendingCallback(null);

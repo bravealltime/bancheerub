@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Type, Volume2, Download, Upload, Phone, Settings2, Users, KeyRound, Shield, BookOpen } from 'lucide-react';
+import { X, Check, Type, Volume2, Download, Upload, Phone, Settings2, Users, KeyRound, Shield, BookOpen, Mail, Lock } from 'lucide-react';
 import { playTapSound, playDeleteSound, speakThai } from '../utils/audio';
 
 export default function SettingsModal({
@@ -11,6 +11,7 @@ export default function SettingsModal({
   onUpdateBookPin,
   adminPin,
   onUpdateAdminPin,
+  adminEmail = 'tharanut@gmail.com',
   fontSize,
   onChangeFontSize,
   soundEnabled,
@@ -28,6 +29,7 @@ export default function SettingsModal({
   onForceSync,
   currentHouseId,
   currentHouseName,
+  isAdminMode = false,
   onOpenHouseManager
 }) {
   const [nameInput, setNameInput] = useState(userName || 'คุณตา');
@@ -238,8 +240,18 @@ export default function SettingsModal({
                 />
               </div>
             </div>
-            <p className="text-[10px] text-stone-400">
-              * รหัสแอดมินสามารถใช้ปลดล็อคเข้าดูสมุดของทุกคนในบ้านได้ตลอดเวลา
+
+            <div className="mt-2 pt-2 border-t border-stone-200/60 flex items-center justify-between gap-2 text-xs">
+              <span className="text-[11px] text-stone-500 flex items-center gap-1">
+                <Mail className="w-3.5 h-3.5 text-amber-600" />
+                <span>อีเมลแอดมิน:</span>
+              </span>
+              <span className="font-mono font-bold text-stone-800 text-[11px] bg-white px-2 py-0.5 rounded border border-stone-200">
+                {adminEmail}
+              </span>
+            </div>
+            <p className="text-[10px] text-stone-400 mt-1">
+              * รหัสผ่าน OTP จะถูกส่งไปยังอีเมลนี้ เพื่อยืนยันสิทธิ์ในการจัดการบ้าน
             </p>
           </div>
 
@@ -373,17 +385,17 @@ export default function SettingsModal({
             </div>
           </div>
 
-          {/* Multi-Tenant House Management Card */}
+          {/* Multi-Tenant House Management Card (Admin Protected) */}
           {onOpenHouseManager && (
-            <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-300 space-y-2">
+            <div className="bg-[#FAF9F5] p-3 rounded-2xl border border-stone-200 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className="text-2xl shrink-0">🏡</span>
                   <div className="min-w-0">
-                    <h4 className="text-xs sm:text-sm font-bold text-amber-950 truncate">
-                      {currentHouseName || 'บ้านเรา'}
+                    <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">
+                      ระบบบ้าน: {currentHouseName || 'บ้านเรา'}
                     </h4>
-                    <p className="text-[10px] sm:text-xs text-amber-800 truncate">
+                    <p className="text-[10px] sm:text-xs text-stone-500 truncate">
                       รหัสบ้าน: <span className="font-mono font-bold">{currentHouseId}</span>
                     </p>
                   </div>
@@ -395,9 +407,10 @@ export default function SettingsModal({
                     onClose();
                     onOpenHouseManager();
                   }}
-                  className="btn-tactile px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs"
+                  className="btn-tactile px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs flex items-center gap-1.5"
                 >
-                  สลับ / ชวนคนเข้าบ้าน
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isAdminMode ? 'จัดการบ้าน (แอดมิน 👑)' : 'จัดการบ้าน (แอดมิน)'}</span>
                 </button>
               </div>
             </div>
