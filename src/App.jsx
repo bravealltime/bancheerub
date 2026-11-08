@@ -14,6 +14,7 @@ import InstallPromptBanner from './components/InstallPromptBanner';
 import PinEntryModal from './components/PinEntryModal';
 import ShareSummaryModal from './components/ShareSummaryModal';
 import OnboardingTutorialModal from './components/OnboardingTutorialModal';
+import HouseManagerModal from './components/HouseManagerModal';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/defaultCategories';
 import { DEFAULT_REMINDERS } from './data/defaultReminders';
 import { DEFAULT_BOOKS, DEFAULT_ADMIN_PIN } from './data/defaultBooks';
@@ -28,12 +29,31 @@ import {
   deleteBookFromCloud
 } from './services/ledgerApi';
 import { uploadReceiptPhotoToSupabase } from './services/supabase';
+import {
+  getInitialHouseId,
+  getHouseName,
+  setHouseName,
+  saveHouseToList,
+  DEFAULT_MAIN_HOUSE_ID,
+  normalizeHouseCode
+} from './utils/houseManager';
+
+const getStorageKey = (baseKey, houseId) => {
+  return houseId === DEFAULT_MAIN_HOUSE_ID ? baseKey : `${baseKey}_${houseId}`;
+};
 
 export default function App() {
-  // 1. Persistent State (Free of mock data)
+  // House Multi-Tenancy State
+  const initialHouse = getInitialHouseId();
+  const [currentHouseId, setCurrentHouseId] = useState(initialHouse);
+  const [currentHouseName, setCurrentHouseName] = useState(() => getHouseName(initialHouse));
+  const [isHouseManagerOpen, setIsHouseManagerOpen] = useState(false);
+
+  // 1. Persistent State (Free of mock data, isolated per house)
   const [transactions, setTransactions] = useState(() => {
     try {
-      const saved = localStorage.getItem('banchee_transactions');
+      const key = getStorageKey('banchee_transactions', initialHouse);
+      const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -73,7 +93,8 @@ export default function App() {
   // Family Member Books State with automatic migration for default PINs
   const [books, setBooks] = useState(() => {
     try {
-      const saved = localStorage.getItem('banchee_family_books');
+      const key = getStorageKey('banchee_family_books', initialHouse);
+      const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -97,7 +118,8 @@ export default function App() {
 
   // Active book ID (null means show Profile Picker Screen)
   const [activeBookId, setActiveBookId] = useState(() => {
-    return localStorage.getItem('banchee_active_book_id') || null;
+    const key = getStorageKey('banchee_active_book_id', initialHouse);
+    return localStorage.getItem(key) || null;
   });
 
   // Admin Master PIN State (default '9999' unlocks any book)
@@ -131,7 +153,8 @@ export default function App() {
   // Reminders
   const [reminders, setReminders] = useState(() => {
     try {
-      const saved = localStorage.getItem('banchee_reminders');
+      const key = getStorageKey('banchee_reminders', initialHouse);
+      const saved = localStorage.getItem(key);
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_REMINDERS;
@@ -139,7 +162,8 @@ export default function App() {
 
   const [completedReminders, setCompletedReminders] = useState(() => {
     try {
-      const saved = localStorage.getItem('banchee_completed_reminders');
+      const key = getStorageKey('banchee_completed_reminders', initialHouse);
+      const saved = localStorage.getItem(key);
       if (saved) return JSON.parse(saved);
     } catch {}
     return {};
@@ -155,14 +179,73 @@ export default function App() {
   const [isRemindersOpen, setIsRemindersOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
+  // Cloud Sync State (HomeSpace + Supabase)
+  const [cloudStatus, setCloudStatus] = useState('syncing'); // 'synced' | 'syncing' | 'offline'
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+
+  // Switch House Handler (Switch context, storage partition, and state)
+  const handleSwitchHouse = useCallback((newHouseId, newHouseName) => {
+    const cleanId = normalizeHouseCode(newHouseId);
+    if (!cleanId) return;
+    localStorage.setItem('banchee_active_house_id', cleanId);
+    const nameToUse = newHouseName || getHouseName(cleanId);
+    if (nameToUse) {
+      setHouseName(cleanId, nameToUse);
+      saveHouseToList(cleanId, nameToUse);
+    }
+    setCurrentHouseId(cleanId);
+    setCurrentHouseName(nameToUse);
+
+    // Load cached data for new house
+    const txKey = getStorageKey('banchee_transactions', cleanId);
+    const booksKey = getStorageKey('banchee_family_books', cleanId);
+    const activeBookKey = getStorageKey('banchee_active_book_id', cleanId);
+    const remindersKey = getStorageKey('banchee_reminders', cleanId);
+    const completedRemindersKey = getStorageKey('banchee_completed_reminders', cleanId);
+
+    try {
+      const savedTx = localStorage.getItem(txKey);
+      setTransactions(savedTx ? JSON.parse(savedTx) : []);
+    } catch {
+      setTransactions([]);
+    }
+
+    try {
+      const savedBooks = localStorage.getItem(booksKey);
+      setBooks(savedBooks ? JSON.parse(savedBooks) : DEFAULT_BOOKS);
+    } catch {
+      setBooks(DEFAULT_BOOKS);
+    }
+
+    const savedActiveBook = localStorage.getItem(activeBookKey);
+    setActiveBookId(savedActiveBook || null);
+
+    try {
+      const savedReminders = localStorage.getItem(remindersKey);
+      setReminders(savedReminders ? JSON.parse(savedReminders) : DEFAULT_REMINDERS);
+    } catch {
+      setReminders(DEFAULT_REMINDERS);
+    }
+
+    try {
+      const savedCompleted = localStorage.getItem(completedRemindersKey);
+      setCompletedReminders(savedCompleted ? JSON.parse(savedCompleted) : {});
+    } catch {
+      setCompletedReminders({});
+    }
+
+    setIsHouseManagerOpen(false);
+    setCloudStatus('syncing');
+  }, []);
+
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('banchee_transactions', JSON.stringify(transactions));
+      localStorage.setItem(getStorageKey('banchee_transactions', currentHouseId), JSON.stringify(transactions));
     } catch (e) {
       console.error('Error saving transactions', e);
     }
-  }, [transactions]);
+  }, [transactions, currentHouseId]);
 
   useEffect(() => {
     localStorage.setItem('banchee_font_size', fontSize);
@@ -183,16 +266,17 @@ export default function App() {
   }, [emergencyPhone]);
 
   useEffect(() => {
-    localStorage.setItem('banchee_family_books', JSON.stringify(books));
-  }, [books]);
+    localStorage.setItem(getStorageKey('banchee_family_books', currentHouseId), JSON.stringify(books));
+  }, [books, currentHouseId]);
 
   useEffect(() => {
+    const key = getStorageKey('banchee_active_book_id', currentHouseId);
     if (activeBookId) {
-      localStorage.setItem('banchee_active_book_id', activeBookId);
+      localStorage.setItem(key, activeBookId);
     } else {
-      localStorage.removeItem('banchee_active_book_id');
+      localStorage.removeItem(key);
     }
-  }, [activeBookId]);
+  }, [activeBookId, currentHouseId]);
 
   useEffect(() => {
     localStorage.setItem('banchee_admin_pin', adminPin);
@@ -207,16 +291,12 @@ export default function App() {
   }, [incomeCategories]);
 
   useEffect(() => {
-    localStorage.setItem('banchee_reminders', JSON.stringify(reminders));
-  }, [reminders]);
+    localStorage.setItem(getStorageKey('banchee_reminders', currentHouseId), JSON.stringify(reminders));
+  }, [reminders, currentHouseId]);
 
   useEffect(() => {
-    localStorage.setItem('banchee_completed_reminders', JSON.stringify(completedReminders));
-  }, [completedReminders]);
-
-  // Cloud Sync State (HomeSpace + Supabase)
-  const [cloudStatus, setCloudStatus] = useState('syncing'); // 'synced' | 'syncing' | 'offline'
-  const [lastSyncTime, setLastSyncTime] = useState(null);
+    localStorage.setItem(getStorageKey('banchee_completed_reminders', currentHouseId), JSON.stringify(completedReminders));
+  }, [completedReminders, currentHouseId]);
 
   const transactionsRef = useRef(transactions);
   const booksRef = useRef(books);
@@ -231,7 +311,7 @@ export default function App() {
   // Background Cloud Sync & Auto-merge
   const pullCloudState = useCallback(async () => {
     try {
-      const data = await fetchLedgerState('family-main');
+      const data = await fetchLedgerState(currentHouseId);
       if (data && data.success) {
         // 1. Transactions merge
         if (Array.isArray(data.transactions) && data.transactions.length > 0) {
@@ -241,7 +321,7 @@ export default function App() {
             prev.forEach(t => {
               if (!map.has(t.id)) {
                 map.set(t.id, t);
-                saveTransactionToCloud(t, 'family-main').catch(() => {});
+                saveTransactionToCloud(t, currentHouseId).catch(() => {});
               }
             });
             return Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
@@ -256,7 +336,7 @@ export default function App() {
             prev.forEach(b => {
               if (!map.has(b.id)) {
                 map.set(b.id, b);
-                saveBookToCloud(b, 'family-main').catch(() => {});
+                saveBookToCloud(b, currentHouseId).catch(() => {});
               }
             });
             return Array.from(map.values());
@@ -270,11 +350,12 @@ export default function App() {
       console.warn('[Ledger Cloud Sync] Offline or server unreachable:', err.message);
       setCloudStatus('offline');
     }
-  }, []);
+  }, [currentHouseId]);
 
   useEffect(() => {
     let isMounted = true;
-    fetchLedgerState('family-main')
+
+    fetchLedgerState(currentHouseId)
       .then(data => {
         if (!isMounted || !data?.success) return;
         if (Array.isArray(data.transactions) && data.transactions.length > 0) {
@@ -287,7 +368,7 @@ export default function App() {
             return Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
           });
         } else if (transactionsRef.current.length > 0) {
-          syncLedgerToCloud({ books: booksRef.current, transactions: transactionsRef.current, reminders: remindersRef.current }, 'family-main').catch(() => {});
+          syncLedgerToCloud({ books: booksRef.current, transactions: transactionsRef.current, reminders: remindersRef.current }, currentHouseId).catch(() => {});
         }
 
         if (Array.isArray(data.books) && data.books.length > 0) {
@@ -300,7 +381,7 @@ export default function App() {
             return Array.from(map.values());
           });
         } else if (booksRef.current.length > 0) {
-          syncLedgerToCloud({ books: booksRef.current, transactions: transactionsRef.current, reminders: remindersRef.current }, 'family-main').catch(() => {});
+          syncLedgerToCloud({ books: booksRef.current, transactions: transactionsRef.current, reminders: remindersRef.current }, currentHouseId).catch(() => {});
         }
         setCloudStatus('synced');
         setLastSyncTime(new Date());
@@ -320,12 +401,12 @@ export default function App() {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('online', onFocus);
     };
-  }, [pullCloudState]);
+  }, [currentHouseId, pullCloudState]);
 
   const handleForceSync = async () => {
     setCloudStatus('syncing');
     try {
-      await syncLedgerToCloud({ books, transactions, reminders }, 'family-main');
+      await syncLedgerToCloud({ books, transactions, reminders }, currentHouseId);
       await pullCloudState();
       setCloudStatus('synced');
     } catch {
@@ -447,7 +528,7 @@ export default function App() {
       }
     }
 
-    saveTransactionToCloud(processedItem, 'family-main')
+    saveTransactionToCloud(processedItem, currentHouseId)
       .then(() => setCloudStatus('synced'))
       .catch(() => setCloudStatus('offline'));
   };
@@ -469,7 +550,7 @@ export default function App() {
 
   const handleAddBook = (newBook) => {
     setBooks(prev => [...prev, newBook]);
-    saveBookToCloud(newBook, 'family-main')
+    saveBookToCloud(newBook, currentHouseId)
       .then(() => setCloudStatus('synced'))
       .catch(() => setCloudStatus('offline'));
   };
@@ -501,6 +582,9 @@ export default function App() {
           transactions={transactions}
           cloudStatus={cloudStatus}
           onForceSync={handleForceSync}
+          currentHouseId={currentHouseId}
+          currentHouseName={currentHouseName}
+          onOpenHouseManager={() => setIsHouseManagerOpen(true)}
         />
 
         {/* 4-digit PIN Modal */}
@@ -519,6 +603,19 @@ export default function App() {
         <OnboardingTutorialModal
           isOpen={showTutorial}
           onClose={handleCloseTutorial}
+        />
+
+        {/* Multi-Tenant House Manager & Switcher Modal */}
+        <HouseManagerModal
+          isOpen={isHouseManagerOpen}
+          onClose={() => setIsHouseManagerOpen(false)}
+          currentHouseId={currentHouseId}
+          currentHouseName={currentHouseName}
+          onSwitchHouse={handleSwitchHouse}
+          onUpdateHouseName={(name) => {
+            setCurrentHouseName(name);
+            setHouseName(currentHouseId, name);
+          }}
         />
       </div>
     );
@@ -542,6 +639,9 @@ export default function App() {
         onOpenMonthlyReport={() => setIsMonthlyReportOpen(true)}
         onOpenReminders={() => setIsRemindersOpen(true)}
         pendingRemindersCount={pendingRemindersCount}
+        currentHouseId={currentHouseId}
+        currentHouseName={currentHouseName}
+        onOpenHouseManager={() => setIsHouseManagerOpen(true)}
       />
 
       {/* Main Container (Responsive: Mobile 1-col, Desktop 2-col) */}
@@ -684,6 +784,9 @@ export default function App() {
         cloudStatus={cloudStatus}
         lastSyncTime={lastSyncTime}
         onForceSync={handleForceSync}
+        currentHouseId={currentHouseId}
+        currentHouseName={currentHouseName}
+        onOpenHouseManager={() => setIsHouseManagerOpen(true)}
       />
 
       <RemindersModal
@@ -722,6 +825,19 @@ export default function App() {
         selectedMonth={currentMonthStr}
         userName={currentBook?.name || 'คุณตาคุณยาย'}
         transactions={bookTransactions}
+      />
+
+      {/* Multi-Tenant House Manager & Switcher Modal */}
+      <HouseManagerModal
+        isOpen={isHouseManagerOpen}
+        onClose={() => setIsHouseManagerOpen(false)}
+        currentHouseId={currentHouseId}
+        currentHouseName={currentHouseName}
+        onSwitchHouse={handleSwitchHouse}
+        onUpdateHouseName={(name) => {
+          setCurrentHouseName(name);
+          setHouseName(currentHouseId, name);
+        }}
       />
     </div>
   );

@@ -15,7 +15,10 @@ export default function Header({
   onOpenReminders,
   pendingRemindersCount = 0,
   cloudStatus = 'synced',
-  onForceSync
+  onForceSync,
+  currentHouseId,
+  currentHouseName,
+  onOpenHouseManager
 }) {
   const todayStr = getTodayString();
   const formattedToday = formatThaiDateFull(todayStr);
@@ -65,9 +68,28 @@ export default function Header({
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <span className="text-2xl sm:text-3xl flex-shrink-0 leading-none">{currentBook?.icon || '📒'}</span>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-bold text-stone-900 leading-normal truncate">
-                สมุดของ {currentBook?.name || 'ครอบครัว'}
-              </h1>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-sm sm:text-base font-bold text-stone-900 leading-normal truncate">
+                  สมุดของ {currentBook?.name || 'ครอบครัว'}
+                </h1>
+                {onOpenHouseManager && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTapSound();
+                      onOpenHouseManager();
+                    }}
+                    className="btn-tactile inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer"
+                    title="แตะเพื่อดูรหัสบ้าน สลับบ้าน หรือส่งลิงก์ชวนคนเข้าบ้านนี้"
+                  >
+                    <span>🏡</span>
+                    <span className="truncate max-w-[100px] sm:max-w-[140px]">{currentHouseName || 'บ้านเรา'}</span>
+                    {currentHouseId && (
+                      <span className="opacity-70 text-[10px] hidden md:inline">({currentHouseId})</span>
+                    )}
+                  </button>
+                )}
+              </div>
               <p className="text-xs text-stone-400 truncate hidden sm:block">
                 แตะ "สลับคน" เพื่อเปลี่ยนสมุด
               </p>

@@ -25,7 +25,10 @@ export default function SettingsModal({
   onSwitchBook,
   cloudStatus = 'synced',
   lastSyncTime,
-  onForceSync
+  onForceSync,
+  currentHouseId,
+  currentHouseName,
+  onOpenHouseManager
 }) {
   const [nameInput, setNameInput] = useState(userName || 'คุณตา');
   const [phoneInput, setPhoneInput] = useState(emergencyPhone || '');
@@ -369,6 +372,36 @@ export default function SettingsModal({
               )}
             </div>
           </div>
+
+          {/* Multi-Tenant House Management Card */}
+          {onOpenHouseManager && (
+            <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-300 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-2xl shrink-0">🏡</span>
+                  <div className="min-w-0">
+                    <h4 className="text-xs sm:text-sm font-bold text-amber-950 truncate">
+                      {currentHouseName || 'บ้านเรา'}
+                    </h4>
+                    <p className="text-[10px] sm:text-xs text-amber-800 truncate">
+                      รหัสบ้าน: <span className="font-mono font-bold">{currentHouseId}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound();
+                    onClose();
+                    onOpenHouseManager();
+                  }}
+                  className="btn-tactile px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs"
+                >
+                  สลับ / ชวนคนเข้าบ้าน
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Connected App: HomeSpace */}
           <a

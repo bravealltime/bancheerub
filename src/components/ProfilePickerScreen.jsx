@@ -10,7 +10,10 @@ export default function ProfilePickerScreen({
   onAddBook,
   onDeleteBook,
   cloudStatus = 'synced',
-  onForceSync
+  onForceSync,
+  currentHouseId,
+  currentHouseName,
+  onOpenHouseManager
 }) {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
@@ -64,7 +67,7 @@ export default function ProfilePickerScreen({
         
         {/* Top Header */}
         <div className="text-center space-y-2 pb-1">
-          {/* Quick link back to HomeSpace & Cloud sync indicator */}
+          {/* Quick link back to HomeSpace, Cloud sync indicator & House Badge */}
           <div className="flex flex-wrap items-center justify-center gap-2 pb-1">
             <a
               href="https://homespace-rose.vercel.app"
@@ -76,6 +79,27 @@ export default function ProfilePickerScreen({
               <span>กลับสู่ HomeSpace บ้านของเรา</span>
               <span className="text-stone-400">→</span>
             </a>
+
+            {onOpenHouseManager && (
+              <button
+                type="button"
+                onClick={() => {
+                  playTapSound();
+                  onOpenHouseManager();
+                }}
+                className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs shadow-xs cursor-pointer transition-all"
+                title="แตะเพื่อสลับบ้าน หรือส่งลิงก์ชวนคนอื่นเข้าบ้านนี้"
+              >
+                <span>🏠</span>
+                <span>{currentHouseName || 'บ้านเรา'}</span>
+                {currentHouseId && (
+                  <span className="px-1.5 py-0.2 rounded-md bg-amber-200/90 text-[10px] text-amber-950 font-mono">
+                    {currentHouseId}
+                  </span>
+                )}
+                <span className="text-amber-700 text-[11px] underline">สลับ/ชวนคน</span>
+              </button>
+            )}
 
             <button
               type="button"
