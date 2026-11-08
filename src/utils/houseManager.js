@@ -152,3 +152,30 @@ export function getHouseInviteUrl(houseId) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://bancheerub.vercel.app';
   return `${origin}/?house=${encodeURIComponent(houseId)}`;
 }
+
+/**
+ * Check if the user has already configured a custom name for this house or finished setup
+ */
+export function hasConfiguredHouseName(houseId) {
+  if (!houseId) return false;
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    const isDone = localStorage.getItem(`banchee_house_setup_done_${houseId}`);
+    if (isDone === 'true') return true;
+    const names = JSON.parse(localStorage.getItem(STORAGE_KEY_HOUSE_NAMES) || '{}');
+    return Boolean(names[houseId] && names[houseId].trim());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Mark that initial house setup has been shown/completed
+ */
+export function markHouseSetupDone(houseId) {
+  if (!houseId) return;
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(`banchee_house_setup_done_${houseId}`, 'true');
+  } catch {}
+}

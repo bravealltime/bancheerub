@@ -66,9 +66,9 @@ export default function ProfilePickerScreen({
       <div className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl w-full mx-auto space-y-6">
         
         {/* Top Header */}
-        <div className="text-center space-y-2 pb-1">
-          {/* Quick link back to HomeSpace, Cloud sync indicator & House Badge */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pb-1">
+        <div className="space-y-3 pb-1">
+          {/* Quick link back to HomeSpace & Cloud sync indicator */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
             <a
               href="https://homespace-rose.vercel.app"
               target="_top"
@@ -79,27 +79,6 @@ export default function ProfilePickerScreen({
               <span>กลับสู่ HomeSpace บ้านของเรา</span>
               <span className="text-stone-400">→</span>
             </a>
-
-            {onOpenHouseManager && (
-              <button
-                type="button"
-                onClick={() => {
-                  playTapSound();
-                  onOpenHouseManager();
-                }}
-                className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs shadow-xs cursor-pointer transition-all"
-                title="แตะเพื่อสลับบ้าน หรือส่งลิงก์ชวนคนอื่นเข้าบ้านนี้"
-              >
-                <span>🏠</span>
-                <span>{currentHouseName || 'บ้านเรา'}</span>
-                {currentHouseId && (
-                  <span className="px-1.5 py-0.2 rounded-md bg-amber-200/90 text-[10px] text-amber-950 font-mono">
-                    {currentHouseId}
-                  </span>
-                )}
-                <span className="text-amber-700 text-[11px] underline">สลับ/ชวนคน</span>
-              </button>
-            )}
 
             <button
               type="button"
@@ -116,15 +95,60 @@ export default function ProfilePickerScreen({
             </button>
           </div>
 
-          <div className="w-16 h-16 rounded-2xl bg-white border border-stone-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
-            📒
+          {/* Prominent Active Family Banner */}
+          <div className="bg-gradient-to-br from-white via-[#FAF7F0] to-[#F5EFE6] border-2 border-[#D8C7B2] rounded-3xl p-4 sm:p-5 shadow-sm text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-13 h-13 sm:w-15 sm:h-15 rounded-2xl bg-amber-500/15 border-2 border-amber-400/40 flex items-center justify-center text-3xl sm:text-4xl shrink-0 shadow-2xs">
+                  🏡
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-bold text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 border border-amber-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      ตอนนี้คุณอยู่ที่บ้าน:
+                    </span>
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-white border border-stone-300 text-stone-800 shadow-2xs select-all">
+                      รหัส: {currentHouseId}
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-stone-900 truncate mt-1 font-['Prompt']">
+                    {currentHouseName || 'บ้านครอบครัวของเรา'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-500 truncate">
+                    สมุดเงินทองและบัญชีรายรับ-รายจ่ายของครอบครัวนี้
+                  </p>
+                </div>
+              </div>
+
+              {/* Setup / Switch House Button */}
+              {onOpenHouseManager && (
+                <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTapSound();
+                      onOpenHouseManager();
+                    }}
+                    className="btn-tactile w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-[#2D6A4F] hover:bg-[#23533E] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
+                    title="แตะเพื่อตั้งชื่อบ้านของคุณ สลับบ้าน หรือคัดลอกลิงก์ชวนคนในบ้าน"
+                  >
+                    <span>✏️</span>
+                    <span>ตั้งชื่อบ้าน / จัดการบ้าน</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 pt-1 font-['Prompt']">
-            สมุดเงินทอง ครอบครัว
-          </h1>
-          <p className="text-sm sm:text-base text-stone-600 font-medium max-w-md mx-auto">
-            เลือกสมุดที่ต้องการดู (ใส่รหัส PIN 4 ตัวเพื่อเข้าดู)
-          </p>
+
+          <div className="text-center space-y-1 pt-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-900 font-['Prompt']">
+              เลือกสมุดของคนในบ้าน
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-600 font-medium max-w-md mx-auto">
+              แตะชื่อของตัวเองแล้วใส่รหัส PIN 4 ตัว เพื่อเข้าดูสมุดเงินทอง
+            </p>
+          </div>
         </div>
 
         {/* Member Profile Books Responsive Grid */}

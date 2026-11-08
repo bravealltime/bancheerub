@@ -79,20 +79,28 @@ export default function Header({
                       playTapSound();
                       onOpenHouseManager();
                     }}
-                    className="btn-tactile inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer"
-                    title="แตะเพื่อดูรหัสบ้าน สลับบ้าน หรือส่งลิงก์ชวนคนเข้าบ้านนี้"
+                    className="btn-tactile inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                    title="แตะเพื่อตั้งชื่อบ้าน สลับบ้าน หรือคัดลอกลิงก์ชวนคนในบ้าน"
                   >
                     <span>🏡</span>
-                    <span className="truncate max-w-[100px] sm:max-w-[140px]">{currentHouseName || 'บ้านเรา'}</span>
+                    <span className="text-amber-800 font-medium hidden sm:inline">บ้าน:</span>
+                    <span className="truncate max-w-[120px] font-black">{currentHouseName || 'บ้านเรา'}</span>
                     {currentHouseId && (
-                      <span className="opacity-70 text-[10px] hidden md:inline">({currentHouseId})</span>
+                      <span className="opacity-75 text-[10px] font-mono hidden md:inline">({currentHouseId})</span>
                     )}
+                    <span className="text-[10px] text-amber-700 underline font-normal hidden lg:inline">ตั้งชื่อ/จัดการ</span>
                   </button>
                 )}
               </div>
-              <p className="text-xs text-stone-400 truncate hidden sm:block">
-                แตะ "สลับคน" เพื่อเปลี่ยนสมุด
-              </p>
+              <div className="flex items-center gap-1.5 text-xs text-stone-500 truncate">
+                <span className="text-stone-400 truncate">
+                  กำลังใช้งาน: <strong className="text-stone-700 font-semibold">{currentHouseName}</strong>
+                </span>
+                <span className="text-stone-300 hidden sm:inline">•</span>
+                <span className="text-stone-400 truncate hidden sm:inline">
+                  แตะ "สลับคน" เพื่อเปลี่ยนสมุด
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -186,7 +194,14 @@ export default function Header({
 
       {/* Date & Reminders Banner */}
       <div className="max-w-5xl xl:max-w-6xl mx-auto mt-2 pt-1.5 border-t border-stone-100 flex flex-wrap items-center justify-between gap-1.5 text-xs sm:text-sm text-stone-500 font-medium">
-        <span className="truncate">{formattedToday}</span>
+        <div className="flex items-center gap-2 truncate">
+          <span className="truncate">{formattedToday}</span>
+          <span className="text-stone-300">•</span>
+          <span className="text-emerald-800 font-semibold truncate flex items-center gap-1">
+            <span>🏡</span>
+            <span>{currentHouseName || 'บ้านครอบครัว'}</span>
+          </span>
+        </div>
         
         <div className="flex items-center gap-3 flex-shrink-0">
           <button

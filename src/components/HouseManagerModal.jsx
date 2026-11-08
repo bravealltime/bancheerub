@@ -140,38 +140,56 @@ export default function HouseManagerModal({
           <div className="bg-gradient-to-br from-[#FAF8F5] to-[#F3EEE6] p-4 rounded-2xl border-2 border-[#E5DDD2] space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-full inline-block mb-1">
-                  กำลังใช้งานบ้านนี้ 🟢
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/90 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-emerald-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    ตอนนี้กำลังเปิดบ้านนี้อยู่ 🟢
+                  </span>
+                </div>
 
                 {isEditingName ? (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <input
-                      type="text"
-                      value={editNameInput}
-                      onChange={(e) => setEditNameInput(e.target.value)}
-                      className="px-2.5 py-1 text-sm font-bold rounded-lg border border-stone-300 bg-white min-w-0 flex-1"
-                      placeholder="ตั้งชื่อบ้านของคุณ"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSaveName}
-                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#2D6A4F] text-white cursor-pointer"
-                    >
-                      บันทึก
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingName(false)}
-                      className="px-2 py-1 text-xs font-bold rounded-lg bg-stone-200 text-stone-700 cursor-pointer"
-                    >
-                      ยกเลิก
-                    </button>
+                  <div className="space-y-2 mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={editNameInput}
+                        onChange={(e) => setEditNameInput(e.target.value)}
+                        className="px-3 py-1.5 text-sm font-bold rounded-xl border-2 border-emerald-500 bg-white min-w-0 flex-1 shadow-2xs"
+                        placeholder="ตั้งชื่อบ้านของคุณ เช่น บ้านสุขใจ"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveName}
+                        className="btn-tactile px-3 py-1.5 text-xs font-bold rounded-xl bg-[#2D6A4F] text-white cursor-pointer shadow-xs"
+                      >
+                        บันทึก
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingName(false)}
+                        className="btn-tactile px-2.5 py-1.5 text-xs font-bold rounded-xl bg-stone-200 text-stone-700 cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                    {/* Quick name presets */}
+                    <div className="flex flex-wrap gap-1">
+                      {['🏡 บ้านสุขใจ', '👴👵 บ้านคุณตาคุณยาย', '👨‍👩‍👧 บ้านเรา', '🌳 บ้านสวน'].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setEditNameInput(preset)}
+                          className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 font-medium cursor-pointer"
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-base sm:text-lg font-black text-stone-900 truncate">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-black text-stone-900 truncate">
                       {currentHouseName}
                     </h3>
                     <button
@@ -180,10 +198,11 @@ export default function HouseManagerModal({
                         setEditNameInput(currentHouseName);
                         setIsEditingName(true);
                       }}
-                      className="text-stone-400 hover:text-stone-700 p-1 cursor-pointer"
+                      className="btn-tactile inline-flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-200/70 hover:bg-amber-200 px-2 py-0.5 rounded-lg border border-amber-300 cursor-pointer transition-colors"
                       title="แก้ไขชื่อบ้าน"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-3 h-3" />
+                      <span>เปลี่ยนชื่อ</span>
                     </button>
                   </div>
                 )}

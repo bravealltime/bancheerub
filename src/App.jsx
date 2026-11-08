@@ -15,6 +15,7 @@ import PinEntryModal from './components/PinEntryModal';
 import ShareSummaryModal from './components/ShareSummaryModal';
 import OnboardingTutorialModal from './components/OnboardingTutorialModal';
 import HouseManagerModal from './components/HouseManagerModal';
+import HouseNameSetupModal from './components/HouseNameSetupModal';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/defaultCategories';
 import { DEFAULT_REMINDERS } from './data/defaultReminders';
 import { DEFAULT_BOOKS, DEFAULT_ADMIN_PIN } from './data/defaultBooks';
@@ -35,7 +36,9 @@ import {
   setHouseName,
   saveHouseToList,
   DEFAULT_MAIN_HOUSE_ID,
-  normalizeHouseCode
+  normalizeHouseCode,
+  hasConfiguredHouseName,
+  markHouseSetupDone
 } from './utils/houseManager';
 
 const getStorageKey = (baseKey, houseId) => {
@@ -67,7 +70,24 @@ export default function App() {
     return [];
   });
 
-  // Onboarding Tutorial State (shows on first entry)
+  // First-time House Name Setup Modal State (Allows user to name their house right on arrival)
+  const [showHouseSetupModal, setShowHouseSetupModal] = useState(() => {
+    return !hasConfiguredHouseName(initialHouse);
+  });
+
+  const handleSaveHouseSetupName = (newName) => {
+    setHouseName(currentHouseId, newName);
+    setCurrentHouseName(newName);
+    markHouseSetupDone(currentHouseId);
+    setShowHouseSetupModal(false);
+  };
+
+  const handleSkipHouseSetup = () => {
+    markHouseSetupDone(currentHouseId);
+    setShowHouseSetupModal(false);
+  };
+
+  // Onboarding Tutorial State (shows on first entry after house setup)
   const [showTutorial, setShowTutorial] = useState(() => {
     return !localStorage.getItem('banchee_tutorial_seen');
   });
@@ -236,6 +256,10 @@ export default function App() {
 
     setIsHouseManagerOpen(false);
     setCloudStatus('syncing');
+
+    if (!hasConfiguredHouseName(cleanId)) {
+      setShowHouseSetupModal(true);
+    }
   }, []);
 
   // Sync to localStorage
@@ -601,8 +625,18 @@ export default function App() {
 
         {/* Step-by-Step Onboarding Tutorial for First-Time Users */}
         <OnboardingTutorialModal
-          isOpen={showTutorial}
+          isOpen={showTutorial && !showHouseSetupModal}
           onClose={handleCloseTutorial}
+        />
+
+        {/* Initial First-Time House Name Setup Modal */}
+        <HouseNameSetupModal
+          isOpen={showHouseSetupModal}
+          currentHouseId={currentHouseId}
+          currentHouseName={currentHouseName}
+          onSaveName={handleSaveHouseSetupName}
+          onSkip={handleSkipHouseSetup}
+          soundEnabled={soundEnabled}
         />
 
         {/* Multi-Tenant House Manager & Switcher Modal */}
@@ -816,8 +850,18 @@ export default function App() {
 
       {/* Step-by-Step Onboarding Tutorial */}
       <OnboardingTutorialModal
-        isOpen={showTutorial}
+        isOpen={showTutorial && !showHouseSetupModal}
         onClose={handleCloseTutorial}
+      />
+
+      {/* Initial First-Time House Name Setup Modal */}
+      <HouseNameSetupModal
+        isOpen={showHouseSetupModal}
+        currentHouseId={currentHouseId}
+        currentHouseName={currentHouseName}
+        onSaveName={handleSaveHouseSetupName}
+        onSkip={handleSkipHouseSetup}
+        soundEnabled={soundEnabled}
       />
 
       {/* A4 Printable Report View (Visible only during window.print()) */}
