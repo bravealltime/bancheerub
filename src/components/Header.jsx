@@ -18,6 +18,7 @@ export default function Header({
   onForceSync,
   currentHouseId,
   currentHouseName,
+  isAdminMode = false,
   onOpenHouseManager
 }) {
   const todayStr = getTodayString();
@@ -72,24 +73,31 @@ export default function Header({
                 <h1 className="text-sm sm:text-base font-bold text-stone-900 leading-normal truncate">
                   สมุดของ {currentBook?.name || 'ครอบครัว'}
                 </h1>
-                {onOpenHouseManager && (
+                {/* House Info Badge (Only admins get manage button, regular members see clean read-only tag) */}
+                {isAdminMode && onOpenHouseManager ? (
                   <button
                     type="button"
                     onClick={() => {
                       playTapSound();
                       onOpenHouseManager();
                     }}
-                    className="btn-tactile inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
-                    title="แตะเพื่อตั้งชื่อบ้าน สลับบ้าน หรือคัดลอกลิงก์ชวนคนในบ้าน"
+                    className="btn-tactile inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                    title="แตะเพื่อจัดการบ้าน (สิทธิ์แอดมิน)"
                   >
                     <span>🏡</span>
-                    <span className="text-amber-800 font-medium hidden sm:inline">บ้าน:</span>
                     <span className="truncate max-w-[120px] font-black">{currentHouseName || 'บ้านเรา'}</span>
-                    {currentHouseId && (
-                      <span className="opacity-75 text-[10px] font-mono hidden md:inline">({currentHouseId})</span>
-                    )}
-                    <span className="text-[10px] text-amber-700 underline font-normal hidden lg:inline">ตั้งชื่อ/จัดการ</span>
+                    <span className="text-[10px] bg-emerald-200/90 text-emerald-900 px-1 py-0.2 rounded font-bold">
+                      👑 แอดมิน
+                    </span>
                   </button>
+                ) : (
+                  <span 
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 border border-stone-200 text-stone-700 text-xs font-semibold"
+                    title={`บ้าน: ${currentHouseName || 'บ้านเรา'} (${currentHouseId || ''})`}
+                  >
+                    <span>🏡</span>
+                    <span className="truncate max-w-[120px]">{currentHouseName || 'บ้านเรา'}</span>
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-1.5 text-xs text-stone-500 truncate">

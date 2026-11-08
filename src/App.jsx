@@ -16,6 +16,7 @@ import ShareSummaryModal from './components/ShareSummaryModal';
 import OnboardingTutorialModal from './components/OnboardingTutorialModal';
 import HouseManagerModal from './components/HouseManagerModal';
 import HouseNameSetupModal from './components/HouseNameSetupModal';
+import AdminAuthModal from './components/AdminAuthModal';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/defaultCategories';
 import { DEFAULT_REMINDERS } from './data/defaultReminders';
 import { DEFAULT_BOOKS, DEFAULT_ADMIN_PIN } from './data/defaultBooks';
@@ -37,7 +38,6 @@ import {
   saveHouseToList,
   DEFAULT_MAIN_HOUSE_ID,
   normalizeHouseCode,
-  hasConfiguredHouseName,
   markHouseSetupDone
 } from './utils/houseManager';
 
@@ -51,6 +51,30 @@ export default function App() {
   const [currentHouseId, setCurrentHouseId] = useState(initialHouse);
   const [currentHouseName, setCurrentHouseName] = useState(() => getHouseName(initialHouse));
   const [isHouseManagerOpen, setIsHouseManagerOpen] = useState(false);
+
+  // Admin Privilege State (Only admins can manage the house or alter settings)
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
+  const [adminPendingCallback, setAdminPendingCallback] = useState(null);
+
+  const requireAdminAction = useCallback((actionCallback) => {
+    if (isAdminMode) {
+      actionCallback();
+    } else {
+      setAdminPendingCallback(() => actionCallback);
+      setIsAdminAuthOpen(true);
+    }
+  }, [isAdminMode]);
+
+  const handleAdminAuthSuccess = useCallback(() => {
+    setIsAdminMode(true);
+    setIsAdminAuthOpen(false);
+    if (adminPendingCallback) {
+      const cb = adminPendingCallback;
+      setAdminPendingCallback(null);
+      cb();
+    }
+  }, [adminPendingCallback]);
 
   // 1. Persistent State (Free of mock data, isolated per house)
   const [transactions, setTransactions] = useState(() => {
@@ -70,10 +94,8 @@ export default function App() {
     return [];
   });
 
-  // First-time House Name Setup Modal State (Allows user to name their house right on arrival)
-  const [showHouseSetupModal, setShowHouseSetupModal] = useState(() => {
-    return !hasConfiguredHouseName(initialHouse);
-  });
+  // House Name Setup Modal State (Triggered by Admin when naming/configuring house)
+  const [showHouseSetupModal, setShowHouseSetupModal] = useState(false);
 
   const handleSaveHouseSetupName = (newName) => {
     setHouseName(currentHouseId, newName);
@@ -87,7 +109,7 @@ export default function App() {
     setShowHouseSetupModal(false);
   };
 
-  // Onboarding Tutorial State (shows on first entry after house setup)
+  // Onboarding Tutorial State
   const [showTutorial, setShowTutorial] = useState(() => {
     return !localStorage.getItem('banchee_tutorial_seen');
   });
@@ -256,10 +278,6 @@ export default function App() {
 
     setIsHouseManagerOpen(false);
     setCloudStatus('syncing');
-
-    if (!hasConfiguredHouseName(cleanId)) {
-      setShowHouseSetupModal(true);
-    }
   }, []);
 
   // Sync to localStorage
@@ -608,7 +626,10 @@ export default function App() {
           onForceSync={handleForceSync}
           currentHouseId={currentHouseId}
           currentHouseName={currentHouseName}
-          onOpenHouseManager={() => setIsHouseManagerOpen(true)}
+          isAdminMode={isAdminMode}
+          onOpenHouseManager={() => requireAdminAction(() => setIsHouseManagerOpen(true))}
+          onRequireAdmin={requireAdminAction}
+          onExitAdminMode={() => setIsAdminMode(false)}
         />
 
         {/* 4-digit PIN Modal */}
@@ -617,8 +638,11 @@ export default function App() {
           book={pinModalBook}
           adminPin={adminPin}
           onClose={() => setPinModalBook(null)}
-          onSuccess={(bookId) => {
+          onSuccess={(bookId, wasAdmin) => {
             setActiveBookId(bookId);
+            if (wasAdmin) {
+              setIsAdminMode(true);
+            }
             setPinModalBook(null);
           }}
         />
@@ -629,7 +653,7 @@ export default function App() {
           onClose={handleCloseTutorial}
         />
 
-        {/* Initial First-Time House Name Setup Modal */}
+        {/* House Name Setup Modal (Triggered by Admin) */}
         <HouseNameSetupModal
           isOpen={showHouseSetupModal}
           currentHouseId={currentHouseId}
@@ -639,7 +663,7 @@ export default function App() {
           soundEnabled={soundEnabled}
         />
 
-        {/* Multi-Tenant House Manager & Switcher Modal */}
+        {/* Multi-Tenant House Manager & Switcher Modal (Protected for Admin) */}
         <HouseManagerModal
           isOpen={isHouseManagerOpen}
           onClose={() => setIsHouseManagerOpen(false)}
@@ -650,6 +674,17 @@ export default function App() {
             setCurrentHouseName(name);
             setHouseName(currentHouseId, name);
           }}
+        />
+
+        {/* Admin Authentication Modal */}
+        <AdminAuthModal
+          isOpen={isAdminAuthOpen}
+          adminPin={adminPin}
+          onClose={() => {
+            setIsAdminAuthOpen(false);
+            setAdminPendingCallback(null);
+          }}
+          onSuccess={handleAdminAuthSuccess}
         />
       </div>
     );
@@ -675,7 +710,8 @@ export default function App() {
         pendingRemindersCount={pendingRemindersCount}
         currentHouseId={currentHouseId}
         currentHouseName={currentHouseName}
-        onOpenHouseManager={() => setIsHouseManagerOpen(true)}
+        isAdminMode={isAdminMode}
+        onOpenHouseManager={() => requireAdminAction(() => setIsHouseManagerOpen(true))}
       />
 
       {/* Main Container (Responsive: Mobile 1-col, Desktop 2-col) */}
@@ -820,7 +856,8 @@ export default function App() {
         onForceSync={handleForceSync}
         currentHouseId={currentHouseId}
         currentHouseName={currentHouseName}
-        onOpenHouseManager={() => setIsHouseManagerOpen(true)}
+        isAdminMode={isAdminMode}
+        onOpenHouseManager={() => requireAdminAction(() => setIsHouseManagerOpen(true))}
       />
 
       <RemindersModal
@@ -882,6 +919,17 @@ export default function App() {
           setCurrentHouseName(name);
           setHouseName(currentHouseId, name);
         }}
+      />
+
+      {/* Admin Authentication Modal */}
+      <AdminAuthModal
+        isOpen={isAdminAuthOpen}
+        adminPin={adminPin}
+        onClose={() => {
+          setIsAdminAuthOpen(false);
+          setAdminPendingCallback(null);
+        }}
+        onSuccess={handleAdminAuthSuccess}
       />
     </div>
   );

@@ -112,11 +112,16 @@ export default function HouseManagerModal({
               🏡
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold truncate">
-                ระบบบ้าน & ส่งต่อให้คนอื่นใช้งาน
-              </h2>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-base sm:text-lg font-bold truncate">
+                  จัดการบ้าน (โหมดแอดมิน)
+                </h2>
+                <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.2 rounded-md">
+                  👑 Admin
+                </span>
+              </div>
               <p className="text-xs text-emerald-200/80 truncate">
-                แยกบัญชีอิสระสำหรับแต่ละครอบครัว
+                เปลี่ยนชื่อบ้าน, คัดลอกลิงก์ชวนคนในบ้าน, หรือสลับบ้าน
               </p>
             </div>
           </div>

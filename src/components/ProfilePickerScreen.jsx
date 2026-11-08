@@ -13,7 +13,10 @@ export default function ProfilePickerScreen({
   onForceSync,
   currentHouseId,
   currentHouseName,
-  onOpenHouseManager
+  isAdminMode = false,
+  onOpenHouseManager,
+  onRequireAdmin,
+  onExitAdminMode
 }) {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
@@ -121,23 +124,50 @@ export default function ProfilePickerScreen({
                 </div>
               </div>
 
-              {/* Setup / Switch House Button */}
-              {onOpenHouseManager && (
-                <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-center">
+              {/* Admin-only House Management */}
+              <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-center">
+                {isAdminMode ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playTapSound();
+                        onOpenHouseManager();
+                      }}
+                      className="btn-tactile px-3.5 py-2 rounded-2xl bg-[#2D6A4F] hover:bg-[#23533E] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all"
+                    >
+                      <span>👑</span>
+                      <span>จัดการบ้าน (แอดมิน)</span>
+                    </button>
+                    {onExitAdminMode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playTapSound();
+                          onExitAdminMode();
+                        }}
+                        className="btn-tactile px-2.5 py-2 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold text-xs cursor-pointer"
+                        title="ออกจากโหมดแอดมิน"
+                      >
+                        ออก
+                      </button>
+                    )}
+                  </div>
+                ) : (
                   <button
                     type="button"
                     onClick={() => {
                       playTapSound();
-                      onOpenHouseManager();
+                      onRequireAdmin?.(() => onOpenHouseManager());
                     }}
-                    className="btn-tactile w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-[#2D6A4F] hover:bg-[#23533E] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
-                    title="แตะเพื่อตั้งชื่อบ้านของคุณ สลับบ้าน หรือคัดลอกลิงก์ชวนคนในบ้าน"
+                    className="btn-tactile px-3 py-1.5 rounded-xl bg-white/90 hover:bg-stone-100 text-stone-500 hover:text-stone-800 border border-stone-300 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                    title="เข้าสู่โหมดแอดมินเพื่อจัดการบ้านหรือแก้ไขข้อมูล"
                   >
-                    <span>✏️</span>
-                    <span>ตั้งชื่อบ้าน / จัดการบ้าน</span>
+                    <Lock className="w-3.5 h-3.5 text-stone-400" />
+                    <span>จัดการบ้าน (แอดมิน)</span>
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
@@ -186,11 +216,11 @@ export default function ProfilePickerScreen({
                     <span>ใส่รหัส</span>
                   </div>
 
-                  {books.length > 1 && (
+                  {isAdminMode && books.length > 1 && (
                     <button
                       onClick={(e) => handleDelete(e, book)}
                       className="p-1 rounded-xl text-stone-300 hover:text-red-600 hover:bg-stone-50 cursor-pointer"
-                      title="ลบสมุดนี้"
+                      title="ลบสมุดนี้ (เฉพาะแอดมิน)"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -200,17 +230,21 @@ export default function ProfilePickerScreen({
             );
           })}
 
-          {/* Add New Profile Member Button */}
+          {/* Add New Profile Member Button (Requires Admin permission) */}
           {!isAdding && (
             <button
               onClick={() => {
                 playTapSound();
-                setIsAdding(true);
+                if (isAdminMode) {
+                  setIsAdding(true);
+                } else {
+                  onRequireAdmin?.(() => setIsAdding(true));
+                }
               }}
               className="btn-tactile bg-white/70 hover:bg-white rounded-2xl p-4 border-2 border-dashed border-stone-300 hover:border-stone-500 text-stone-700 font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all min-h-[76px]"
             >
-              <Plus className="w-5 h-5 text-stone-600" />
-              <span>+ เพิ่มสมุดใหม่</span>
+              {isAdminMode ? <Plus className="w-5 h-5 text-stone-600" /> : <Lock className="w-4 h-4 text-stone-400" />}
+              <span>{isAdminMode ? '+ เพิ่มสมุดใหม่' : '+ เพิ่มสมุดใหม่ (แอดมิน)'}</span>
             </button>
           )}
         </div>
